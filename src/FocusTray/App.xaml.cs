@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using FocusTray.Core.Services;
 using FocusTray.Core.Models;
 using H.NotifyIcon;

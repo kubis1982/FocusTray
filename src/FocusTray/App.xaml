@@ -7,8 +7,7 @@
     <Application.Resources>
         <tb:TaskbarIcon x:Key="NotifyIcon"
                         ToolTipText="FocusTray - Ready"
-                        MenuActivation="LeftOrRightClick"
-                        IconSource="/images/logo.ico">
+                        MenuActivation="LeftOrRightClick" IconSource="/images/app.ico">
             <tb:TaskbarIcon.ContextMenu>
                 <ContextMenu>
                     <MenuItem x:Name="StartSessionMenuItem" Header="Start Focus Session..." Click="StartSession_Click" />
