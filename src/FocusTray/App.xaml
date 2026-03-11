@@ -1,9 +1,21 @@
-﻿<Application x:Class="FocusTray.App"
+<Application x:Class="FocusTray.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:FocusTray"
-             StartupUri="MainWindow.xaml">
+             xmlns:tb="clr-namespace:H.NotifyIcon;assembly=H.NotifyIcon.Wpf"
+             Startup="Application_Startup"
+             Exit="Application_Exit">
     <Application.Resources>
-         
+        <tb:TaskbarIcon x:Key="NotifyIcon"
+                        ToolTipText="FocusTray - Ready"
+                        MenuActivation="LeftOrRightClick"
+                        IconSource="/images/logo.ico">
+            <tb:TaskbarIcon.ContextMenu>
+                <ContextMenu>
+                    <MenuItem x:Name="StartSessionMenuItem" Header="Start Focus Session..." Click="StartSession_Click" />
+                    <Separator />
+                    <MenuItem x:Name="ExitMenuItem" Header="Exit" Click="Exit_Click" />
+                </ContextMenu>
+            </tb:TaskbarIcon.ContextMenu>
+        </tb:TaskbarIcon>
     </Application.Resources>
 </Application>
