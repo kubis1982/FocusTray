@@ -14,6 +14,9 @@ public partial class App : Application
 
     private void Application_Startup(object sender, StartupEventArgs e)
     {
+        // Prevent the main window from being created automatically
+        this.MainWindow = null;
+
         // Setup dependency injection
         var services = new ServiceCollection();
         services.AddSingleton<ITimerService, TimerService>();
@@ -21,14 +24,17 @@ public partial class App : Application
 
         // Get timer service
         _timerService = _serviceProvider.GetRequiredService<ITimerService>();
-        
+
         // Subscribe to timer events
         _timerService.StateChanged += OnTimerStateChanged;
         _timerService.Tick += OnTimerTick;
         _timerService.SessionCompleted += OnSessionCompleted;
 
-        // Get notify icon from resources
+        // Get notify icon from resources and make it visible
         _notifyIcon = (TaskbarIcon)FindResource("NotifyIcon");
+
+        // Force the icon to show immediately
+        _notifyIcon.ForceCreate();
     }
 
     private void Application_Exit(object sender, ExitEventArgs e)
