@@ -1,0 +1,61 @@
+<Window x:Class="FocusTray.SessionStatusDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Current Focus Session" 
+        MinHeight="320" MinWidth="450" 
+        Height="320" Width="450"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResize"
+        ShowInTaskbar="False"
+        SizeToContent="Manual">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Current Focus Session" 
+                   FontSize="18" FontWeight="Bold" 
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,20"/>
+
+        <TextBlock Grid.Row="1" Text="Task Description" FontWeight="Bold" Margin="0,0,0,5"/>
+        <TextBlock x:Name="TaskDescriptionText" Grid.Row="2" 
+                   Margin="0,0,0,15" 
+                   TextWrapping="Wrap"
+                   FontSize="14"/>
+
+        <TextBlock Grid.Row="3" Text="Time Remaining" FontWeight="Bold" Margin="0,0,0,5"/>
+        <TextBlock x:Name="TimeRemainingText" Grid.Row="4" 
+                   Margin="0,0,0,15" 
+                   FontSize="24" FontWeight="Bold"
+                   HorizontalAlignment="Center"
+                   Foreground="DarkBlue"/>
+
+        <TextBlock Grid.Row="5" Text="Session Duration" FontWeight="Bold" Margin="0,0,0,5"/>
+        <TextBlock x:Name="SessionDurationText" Grid.Row="6" 
+                   Margin="0,0,0,15" 
+                   FontSize="14"/>
+
+        <StackPanel Grid.Row="8" Orientation="Horizontal" HorizontalAlignment="Center">
+            <Button x:Name="ExtendButton" Content="Extend (+5min)" 
+                    Width="100" Height="35" 
+                    Margin="0,0,15,0"
+                    Click="ExtendButton_Click"/>
+            <Button x:Name="EndSessionButton" Content="End Session" 
+                    Width="100" Height="35" 
+                    Margin="0,0,15,0"
+                    Click="EndSessionButton_Click"/>
+            <Button Content="Close" Width="80" Height="35" 
+                    IsCancel="True"
+                    Click="CloseButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

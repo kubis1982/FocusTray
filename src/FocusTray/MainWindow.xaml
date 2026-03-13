@@ -3,10 +3,37 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:tb="http://www.hardcodet.net/taskbar"
         xmlns:local="clr-namespace:FocusTray"
         mc:Ignorable="d"
-        Title="FocusTray" Height="450" Width="800">
+        Title="FocusTray" Height="450" Width="800"
+        WindowState="Minimized"
+        ShowInTaskbar="False"
+        Visibility="Hidden">
     <Grid>
-
+        <tb:TaskbarIcon x:Name="TrayIcon"
+                        IconSource="/Resources/favicon.ico"
+                        ToolTipText="FocusTray - Click to start focus session"
+                        LeftClickCommand="{Binding ShowSessionConfigCommand}"
+                        MenuActivation="RightClick">
+            <tb:TaskbarIcon.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Start Focus Session" 
+                              x:Name="StartSessionMenuItem"
+                              Click="StartSession_Click"/>
+                    <MenuItem Header="View Current Session" 
+                              x:Name="ViewSessionMenuItem"
+                              Click="ViewSession_Click"
+                              IsEnabled="False"/>
+                    <MenuItem Header="End Session" 
+                              x:Name="EndSessionMenuItem"
+                              Click="EndSession_Click"
+                              IsEnabled="False"/>
+                    <Separator/>
+                    <MenuItem Header="Exit" 
+                              Click="Exit_Click"/>
+                </ContextMenu>
+            </tb:TaskbarIcon.ContextMenu>
+        </tb:TaskbarIcon>
     </Grid>
 </Window>
