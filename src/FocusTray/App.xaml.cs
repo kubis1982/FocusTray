@@ -1,6 +1,7 @@
-using System.Windows;
 using FocusTray.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
+using System.Windows;
 
 namespace FocusTray;
 
@@ -14,6 +15,13 @@ public partial class App : Application
     {
         // Setup dependency injection
         var services = new ServiceCollection();
+
+        // Configure logging
+        Log.Logger = new LoggerConfiguration()
+            .WriteTo.File("logs/focustray.log", rollingInterval: RollingInterval.Day)
+            .CreateLogger();
+
+        services.AddLogging(builder => builder.AddSerilog());
 
         // Add core services
         services.AddSingleton<ITimerService, TimerService>();
