@@ -13,7 +13,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Resource Include="images\favicon.ico" />
+		<Resource Include="Resources\favicon.ico" />
 	</ItemGroup>
 
 	<PropertyGroup>
@@ -22,7 +22,7 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<UseWPF>true</UseWPF>
-		<ApplicationIcon>images\favicon.ico</ApplicationIcon>
+		<ApplicationIcon>Resources\favicon.ico</ApplicationIcon>
 	</PropertyGroup>
 
 	<!-- Self-contained deployment configuration (Release builds and publishing) -->
