@@ -3,9 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Current Focus Session" 
         MinHeight="320" MinWidth="450" 
-        Height="320" Width="450"
+        Height="500" Width="450"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="CanResize"
+        ResizeMode="CanResize"        
         ShowInTaskbar="False"
         SizeToContent="Manual">
     <Grid Margin="20">
@@ -33,11 +33,10 @@
                    FontSize="14"/>
 
         <TextBlock Grid.Row="3" Text="Time Remaining" FontWeight="Bold" Margin="0,0,0,5"/>
-        <TextBlock x:Name="TimeRemainingText" Grid.Row="4" 
-                   Margin="0,0,0,15" 
-                   FontSize="24" FontWeight="Bold"
-                   HorizontalAlignment="Center"
-                   Foreground="DarkBlue"/>
+        <Grid Grid.Row="4" Margin="0,0,0,15" HorizontalAlignment="Center">
+            <!-- Analog countdown clock replacing the textual time display -->
+            <Canvas x:Name="TimeRemainingCanvas" Width="160" Height="160" />
+        </Grid>
 
         <TextBlock Grid.Row="5" Text="Session Duration" FontWeight="Bold" Margin="0,0,0,5"/>
         <TextBlock x:Name="SessionDurationText" Grid.Row="6" 
