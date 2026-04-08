@@ -208,7 +208,7 @@ public partial class MainWindow : Window
 
     private void CreateNotificationWindow(string title, string message, ControlAppearance appearance, SymbolRegular iconSymbol)
     {
-        // Utwórz dedykowane okno dla notyfikacji
+        // Create dedicated window for notification
         var notificationWindow = new Window
         {
             WindowStyle = WindowStyle.None,
@@ -222,37 +222,37 @@ public partial class MainWindow : Window
             Opacity = 0
         };
 
-        // Pozycjonuj w prawym dolnym rogu ekranu z uwzględnieniem paska zadań
+        // Position in bottom right corner of screen, accounting for taskbar
         var workingArea = SystemParameters.WorkArea;
         var screenHeight = SystemParameters.PrimaryScreenHeight;
         var screenWidth = SystemParameters.PrimaryScreenWidth;
 
-        // Oblicz wysokość paska zadań
+        // Calculate taskbar height
         var taskbarHeight = screenHeight - workingArea.Height;
 
-        // Pozycjonowanie z marginesami i uwzględnieniem paska zadań
+        // Positioning with margins and taskbar consideration
         var marginRight = 20;
         var marginBottom = 70;  // Increased from 20 to 70 (50px additional space above taskbar)
 
         notificationWindow.Left = workingArea.Right - notificationWindow.Width - marginRight;
 
-        // Jeśli pasek zadań jest na dole (standardowa konfiguracja)
+        // If taskbar is at bottom (standard configuration)
         if (workingArea.Bottom < screenHeight)
         {
             notificationWindow.Top = workingArea.Bottom - notificationWindow.Height - marginBottom;
         }
-        // Jeśli pasek zadań jest na górze
+        // If taskbar is at top
         else if (workingArea.Top > 0)
         {
             notificationWindow.Top = screenHeight - notificationWindow.Height - taskbarHeight - marginBottom;
         }
-        // Fallback - standardowe pozycjonowanie
+        // Fallback - standard positioning
         else
         {
             notificationWindow.Top = workingArea.Bottom - notificationWindow.Height - marginBottom;
         }
 
-        // Upewnij się, że notyfikacja nie wyjdzie poza ekran
+        // Ensure notification doesn't go off screen
         if (notificationWindow.Top < 0)
         {
             notificationWindow.Top = marginBottom;
@@ -262,7 +262,7 @@ public partial class MainWindow : Window
             notificationWindow.Left = marginRight;
         }
 
-        // Utwórz zawartość używając WPF-UI InfoBar
+        // Create content using WPF-UI InfoBar
         var infoBar = new InfoBar
         {
             Title = title,
@@ -281,7 +281,7 @@ public partial class MainWindow : Window
         notificationWindow.Content = infoBar;
         notificationWindow.Show();
 
-        // Animacja fade-in
+        // Fade-in animation
         var fadeInAnimation = new System.Windows.Media.Animation.DoubleAnimation
         {
             From = 0.0,
@@ -290,13 +290,13 @@ public partial class MainWindow : Window
         };
         notificationWindow.BeginAnimation(Window.OpacityProperty, fadeInAnimation);
 
-        // Auto-zamknięcie po 5 sekundach
+        // Auto-close after 5 seconds
         var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
         timer.Tick += (s, e) =>
         {
             timer.Stop();
 
-            // Animacja fade-out przed zamknięciem
+            // Fade-out animation before closing
             var fadeOutAnimation = new System.Windows.Media.Animation.DoubleAnimation
             {
                 From = 1.0,
@@ -308,7 +308,7 @@ public partial class MainWindow : Window
         };
         timer.Start();
 
-        // Możliwość zamknięcia przez kliknięcie
+        // Allow closing by clicking
         notificationWindow.MouseLeftButtonDown += (s, e) =>
         {
             timer.Stop();
