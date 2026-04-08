@@ -194,6 +194,7 @@ public partial class MainWindow : Window
     private void ShowSuccessNotification(string title, string message)
     {
         new ToastContentBuilder()
+            .SetToastScenario(ToastScenario.Reminder)
             .AddText(title)
             .AddText(message)
             .Show();
