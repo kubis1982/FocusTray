@@ -37,11 +37,10 @@ public interface ITimerService
     /// </summary>
     /// <param name="taskDescription">Description of the task to focus on.</param>
     /// <param name="duration">Duration of the focus session.</param>
-    /// <param name="enableTeamsSync">Whether to sync status with Microsoft Teams.</param>
     /// <returns>True if the session started successfully, false otherwise.</returns>
     /// <exception cref="ArgumentException">Thrown when parameters are invalid.</exception>
     /// <exception cref="InvalidOperationException">Thrown when a session is already running.</exception>
-    bool StartSession(string taskDescription, TimeSpan duration, bool enableTeamsSync = false);
+    bool StartSession(string taskDescription, TimeSpan duration);
     
     /// <summary>
     /// Pauses the current session.

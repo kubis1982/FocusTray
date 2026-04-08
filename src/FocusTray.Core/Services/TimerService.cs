@@ -29,7 +29,7 @@ public class TimerService : ITimerService, IDisposable
         _timer.Elapsed += OnTimerElapsed;
     }
 
-    public bool StartSession(string taskDescription, TimeSpan duration, bool enableTeamsSync = false)
+    public bool StartSession(string taskDescription, TimeSpan duration)
     {
         if (string.IsNullOrWhiteSpace(taskDescription))
             throw new ArgumentException("Task description cannot be empty.", nameof(taskDescription));
@@ -48,8 +48,7 @@ public class TimerService : ITimerService, IDisposable
             TaskDescription = taskDescription,
             Duration = duration,
             StartTime = DateTime.UtcNow,
-            State = TimerState.Running,
-            EnableTeamsSync = enableTeamsSync
+            State = TimerState.Running
         };
 
         _timer.Start();

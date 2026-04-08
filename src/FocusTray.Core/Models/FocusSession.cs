@@ -26,11 +26,6 @@ public class FocusSession
     public TimerState State { get; set; } = TimerState.Idle;
     
     /// <summary>
-    /// Gets or sets whether Teams integration is enabled for this session.
-    /// </summary>
-    public bool EnableTeamsSync { get; set; }
-    
-    /// <summary>
     /// Gets the time remaining in the session.
     /// </summary>
     public TimeSpan TimeRemaining

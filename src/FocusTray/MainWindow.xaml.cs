@@ -58,6 +58,7 @@ public partial class MainWindow : Window
             if (result == true)
             {
                 UpdateTrayMenuState();
+                UpdateTrayIcon(true);
                 _uiUpdateTimer?.Start();
             }
         }
@@ -94,6 +95,7 @@ public partial class MainWindow : Window
             {
                 _timerService.StopSession();
                 UpdateTrayMenuState();
+                UpdateTrayIcon(false);
                 _uiUpdateTimer?.Stop();
                 UpdateTrayTooltip("FocusTray - Click to start focus session");
             }
@@ -133,6 +135,7 @@ public partial class MainWindow : Window
             ShowSessionCompletedNotification(session);
 
             UpdateTrayMenuState();
+            UpdateTrayIcon(false);
             UpdateTrayTooltip("FocusTray - Session completed! Click to start new session");
         });
     }
@@ -142,6 +145,7 @@ public partial class MainWindow : Window
         Dispatcher.InvokeAsync(() =>
         {
             UpdateTrayMenuState();
+            UpdateTrayIcon(state == TimerState.Running);
         });
     }
 
@@ -168,38 +172,23 @@ public partial class MainWindow : Window
         TrayIcon.ToolTipText = tooltip;
     }
 
+    private void UpdateTrayIcon(bool isActive)
+    {
+        var iconPath = isActive 
+            ? "pack://application:,,,/Resources/favicon-active.ico" 
+            : "pack://application:,,,/Resources/favicon.ico";
+        
+        TrayIcon.IconSource = new System.Windows.Media.Imaging.BitmapImage(
+            new System.Uri(iconPath, System.UriKind.Absolute));
+    }
+
     private void ShowSessionCompletedNotification(FocusSession session)
     {
-        // Show completion notification with Snackbar
+        // Show completion notification with toast only
         ShowSuccessNotification(
             "Session Completed!",
             $"Task: {session.TaskDescription}\nDuration: {FormatTime(session.Duration)}"
         );
-
-        // Show extension option with MessageBox (for user interaction)
-        var result = System.Windows.MessageBox.Show(
-            $"Focus session completed!\n\nTask: {session.TaskDescription}\nDuration: {FormatTime(session.Duration)}\n\nWould you like to extend the session by 5 minutes?", 
-            "Session Completed - FocusTray", 
-            System.Windows.MessageBoxButton.YesNo, 
-            System.Windows.MessageBoxImage.Question,
-            System.Windows.MessageBoxResult.No
-        );
-
-        if (result == System.Windows.MessageBoxResult.Yes)
-        {
-            _timerService.ExtendSession(TimeSpan.FromMinutes(5));
-            _uiUpdateTimer?.Start();
-            UpdateTrayMenuState();
-
-            // Refresh tooltip when extending session
-            UpdateTrayTooltip($"FocusTray - {FormatTime(_timerService.CurrentSession?.TimeRemaining ?? TimeSpan.Zero)} remaining");
-
-            // Show extension confirmation with Snackbar
-            ShowInfoNotification(
-                "Session Extended",
-                "Focus session extended by 5 minutes"
-            );
-        }
     }
 
     private void ShowSuccessNotification(string title, string message)

@@ -17,6 +17,7 @@
 
 	<ItemGroup>
 		<Resource Include="Resources\favicon.ico" />
+		<Resource Include="Resources\favicon-active.ico" />
 	</ItemGroup>
 
 	<PropertyGroup>

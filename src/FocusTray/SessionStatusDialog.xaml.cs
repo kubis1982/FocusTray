@@ -219,10 +219,6 @@ public partial class SessionStatusDialog : Window
         Dispatcher.InvokeAsync(() =>
         {
             _updateTimer.Stop();
-            
-            MessageBox.Show($"Focus session completed!\n\nTask: {session.TaskDescription}\nDuration: {FormatTime(session.Duration)}", 
-                "Session Completed", MessageBoxButton.OK, MessageBoxImage.Information);
-            
             Close();
         });
     }

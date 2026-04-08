@@ -47,8 +47,7 @@ public partial class SessionConfigDialog : Window
 
         try
         {
-            var enableTeamsSync = TeamsSyncCheckBox.IsChecked == true;
-            _timerService.StartSession(taskDescription, TimeSpan.FromMinutes(durationMinutes), enableTeamsSync);
+            _timerService.StartSession(taskDescription, TimeSpan.FromMinutes(durationMinutes));
             
             DialogResult = true;
             Close();

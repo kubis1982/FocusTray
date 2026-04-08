@@ -41,21 +41,6 @@ public class TimerServiceTests : IDisposable
         _timerService.CurrentSession.State.Should().Be(TimerState.Running);
     }
 
-    [Fact]
-    public void Should_SetTeamsSyncFlag_When_TeamsSyncEnabled()
-    {
-        // Arrange
-        var taskDescription = "Deep work session";
-        var duration = TimeSpan.FromMinutes(45);
-
-        // Act
-        _timerService.StartSession(taskDescription, duration, enableTeamsSync: true);
-
-        // Assert
-        _timerService.CurrentSession.Should().NotBeNull();
-        _timerService.CurrentSession!.EnableTeamsSync.Should().BeTrue();
-    }
-
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
