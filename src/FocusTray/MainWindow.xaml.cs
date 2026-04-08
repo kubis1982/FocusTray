@@ -174,10 +174,10 @@ public partial class MainWindow : Window
 
     private void UpdateTrayIcon(bool isActive)
     {
-        var iconPath = isActive 
-            ? "pack://application:,,,/Resources/favicon-active.ico" 
+        var iconPath = isActive
+            ? "pack://application:,,,/Resources/favicon-active.ico"
             : "pack://application:,,,/Resources/favicon.ico";
-        
+
         TrayIcon.IconSource = new System.Windows.Media.Imaging.BitmapImage(
             new System.Uri(iconPath, System.UriKind.Absolute));
     }
@@ -232,7 +232,7 @@ public partial class MainWindow : Window
 
         // Pozycjonowanie z marginesami i uwzględnieniem paska zadań
         var marginRight = 20;
-        var marginBottom = 20;
+        var marginBottom = 70;  // Increased from 20 to 70 (50px additional space above taskbar)
 
         notificationWindow.Left = workingArea.Right - notificationWindow.Width - marginRight;
 
