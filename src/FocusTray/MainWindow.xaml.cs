@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Media;
 using System.Windows;
 using System.Windows.Threading;
-using Wpf.Ui.Controls;
+using CommunityToolkit.WinUI.Notifications;
 
 namespace FocusTray;
 
@@ -175,8 +175,8 @@ public partial class MainWindow : Window
     private void UpdateTrayIcon(bool isActive)
     {
         var iconPath = isActive
-            ? "pack://application:,,,/Resources/favicon-active.ico"
-            : "pack://application:,,,/Resources/favicon.ico";
+            ? "pack://application:,,,/Resources/bell-with-slash-48.ico"
+            : "pack://application:,,,/Resources/bell-48.ico";
 
         TrayIcon.IconSource = new System.Windows.Media.Imaging.BitmapImage(
             new System.Uri(iconPath, System.UriKind.Absolute));
@@ -193,127 +193,26 @@ public partial class MainWindow : Window
 
     private void ShowSuccessNotification(string title, string message)
     {
-        CreateNotificationWindow(title, message, ControlAppearance.Success, SymbolRegular.CheckmarkCircle24);
+        new ToastContentBuilder()
+            .AddText(title)
+            .AddText(message)
+            .Show();
     }
 
     private void ShowInfoNotification(string title, string message)
     {
-        CreateNotificationWindow(title, message, ControlAppearance.Info, SymbolRegular.Info24);
+        new ToastContentBuilder()
+            .AddText(title)
+            .AddText(message)
+            .Show();
     }
 
     private void ShowErrorNotification(string title, string message)
     {
-        CreateNotificationWindow(title, message, ControlAppearance.Danger, SymbolRegular.ErrorCircle24);
-    }
-
-    private void CreateNotificationWindow(string title, string message, ControlAppearance appearance, SymbolRegular iconSymbol)
-    {
-        // Create dedicated window for notification
-        var notificationWindow = new Window
-        {
-            WindowStyle = WindowStyle.None,
-            ResizeMode = ResizeMode.NoResize,
-            AllowsTransparency = true,
-            Background = System.Windows.Media.Brushes.Transparent,
-            ShowInTaskbar = false,
-            Topmost = true,
-            Width = 350,
-            Height = 120,
-            Opacity = 0
-        };
-
-        // Position in bottom right corner of screen, accounting for taskbar
-        var workingArea = SystemParameters.WorkArea;
-        var screenHeight = SystemParameters.PrimaryScreenHeight;
-        var screenWidth = SystemParameters.PrimaryScreenWidth;
-
-        // Calculate taskbar height
-        var taskbarHeight = screenHeight - workingArea.Height;
-
-        // Positioning with margins and taskbar consideration
-        var marginRight = 20;
-        var marginBottom = 70;  // Increased from 20 to 70 (50px additional space above taskbar)
-
-        notificationWindow.Left = workingArea.Right - notificationWindow.Width - marginRight;
-
-        // If taskbar is at bottom (standard configuration)
-        if (workingArea.Bottom < screenHeight)
-        {
-            notificationWindow.Top = workingArea.Bottom - notificationWindow.Height - marginBottom;
-        }
-        // If taskbar is at top
-        else if (workingArea.Top > 0)
-        {
-            notificationWindow.Top = screenHeight - notificationWindow.Height - taskbarHeight - marginBottom;
-        }
-        // Fallback - standard positioning
-        else
-        {
-            notificationWindow.Top = workingArea.Bottom - notificationWindow.Height - marginBottom;
-        }
-
-        // Ensure notification doesn't go off screen
-        if (notificationWindow.Top < 0)
-        {
-            notificationWindow.Top = marginBottom;
-        }
-        if (notificationWindow.Left < 0)
-        {
-            notificationWindow.Left = marginRight;
-        }
-
-        // Create content using WPF-UI InfoBar
-        var infoBar = new InfoBar
-        {
-            Title = title,
-            Message = message,
-            Severity = appearance switch
-            {
-                ControlAppearance.Success => InfoBarSeverity.Success,
-                ControlAppearance.Danger => InfoBarSeverity.Error,
-                ControlAppearance.Caution => InfoBarSeverity.Warning,
-                _ => InfoBarSeverity.Informational
-            },
-            IsOpen = true,
-            Margin = new Thickness(10)
-        };
-
-        notificationWindow.Content = infoBar;
-        notificationWindow.Show();
-
-        // Fade-in animation
-        var fadeInAnimation = new System.Windows.Media.Animation.DoubleAnimation
-        {
-            From = 0.0,
-            To = 1.0,
-            Duration = TimeSpan.FromSeconds(0.3)
-        };
-        notificationWindow.BeginAnimation(Window.OpacityProperty, fadeInAnimation);
-
-        // Auto-close after 5 seconds
-        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
-        timer.Tick += (s, e) =>
-        {
-            timer.Stop();
-
-            // Fade-out animation before closing
-            var fadeOutAnimation = new System.Windows.Media.Animation.DoubleAnimation
-            {
-                From = 1.0,
-                To = 0.0,
-                Duration = TimeSpan.FromSeconds(0.5)
-            };
-            fadeOutAnimation.Completed += (sender, args) => notificationWindow.Close();
-            notificationWindow.BeginAnimation(Window.OpacityProperty, fadeOutAnimation);
-        };
-        timer.Start();
-
-        // Allow closing by clicking
-        notificationWindow.MouseLeftButtonDown += (s, e) =>
-        {
-            timer.Stop();
-            notificationWindow.Close();
-        };
+        new ToastContentBuilder()
+            .AddText(title)
+            .AddText(message)
+            .Show();
     }
 
     private static string FormatTime(TimeSpan time)

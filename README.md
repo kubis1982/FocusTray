@@ -19,10 +19,10 @@ FocusTray is a lightweight productivity tool that lives in your Windows system t
   - Set custom durations (from 1 minute to 24 hours)
   - Default 25-minute Pomodoro-style sessions
 
-- **📢 Non-Intrusive Notifications**: Elegant toast notifications that don't interrupt your flow
-  - Positioned above the Windows taskbar for visibility
-  - Auto-dismiss after 5 seconds
-  - Smooth fade-in and fade-out animations
+- **📢 Non-Intrusive Notifications**: Native Windows toast notifications
+  - True system notifications using Windows Action Center
+  - Auto-dismiss after configured time
+  - Clean, native Windows 10/11 appearance
 
 - **🎯 Visual Session Tracking**: Real-time session monitoring
   - Live countdown in system tray tooltip
@@ -122,7 +122,7 @@ FocusTray/
 **UI Layer** (`FocusTray`)
 - WPF application with system tray integration
 - Uses H.NotifyIcon.Wpf for taskbar icon management
-- WPF-UI (Wpf.Ui) for modern notification design
+- CommunityToolkit.WinUI.Notifications for native Windows toast notifications
 - Custom analog clock visualization
 
 **Infrastructure Layer** (`FocusTray.Infrastructure`)
@@ -131,10 +131,10 @@ FocusTray/
 
 ## Technology Stack
 
-- **.NET 10.0** - Latest .NET platform
+- **.NET 10.0** - Latest .NET platform with Windows 10.0.19041.0 target
 - **WPF** - Windows Presentation Foundation for desktop UI
 - **H.NotifyIcon.Wpf 2.4.1** - System tray icon management
-- **WPF-UI 4.2.0** - Modern UI components and notifications
+- **CommunityToolkit.WinUI.Notifications 7.1.2** - Native Windows toast notifications
 - **Serilog** - Structured logging
 - **xUnit v3** - Unit testing framework
 - **AwesomeAssertions** - Fluent assertion library
@@ -162,7 +162,7 @@ All NuGet dependencies are managed centrally through the solution file. Key pack
 - **Microsoft.Extensions.DependencyInjection** - Dependency injection
 - **Serilog.Sinks.File** - File-based logging
 - **H.NotifyIcon.Wpf** - System tray functionality
-- **WPF-UI** - Modern UI components
+- **CommunityToolkit.WinUI.Notifications** - Native Windows toast notifications
 
 ## Configuration
 
@@ -170,7 +170,7 @@ FocusTray requires minimal configuration:
 
 - **Default Session Duration**: 25 minutes (Pomodoro technique)
 - **Maximum Duration**: 24 hours (1440 minutes)
-- **Notification Duration**: 5 seconds
+- **Notification Type**: Native Windows toast notifications
 - **Update Interval**: 1 second
 
 ## License

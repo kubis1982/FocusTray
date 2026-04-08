@@ -14,11 +14,6 @@ public partial class SessionStatusDialog : Window
     private readonly ITimerService _timerService;
     private readonly DispatcherTimer _updateTimer;
 
-    // Keep references to hand shapes so we can rotate/update them
-    private Line? _hourHand;
-    private Line? _minuteHand;
-    private Line? _secondHand;
-
     // Canvas acquired from XAML at runtime (use FindName to avoid generated-field issues)
     private Canvas? _timeRemainingCanvas;
 

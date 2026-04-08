@@ -13,7 +13,7 @@
         Visibility="Hidden">
     <Grid>
         <tb:TaskbarIcon x:Name="TrayIcon"
-                        IconSource="/Resources/favicon.ico"
+                        IconSource="/Resources/bell-48.ico"
                         ToolTipText="FocusTray - Click to start focus session"
                         LeftClickCommand="{Binding ShowSessionConfigCommand}"
                         MenuActivation="RightClick">
