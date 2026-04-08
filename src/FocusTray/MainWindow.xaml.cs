@@ -1,9 +1,10 @@
-using System.Media;
-using System.Windows;
-using System.Windows.Threading;
 using FocusTray.Core.Models;
 using FocusTray.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
+using System.Media;
+using System.Windows;
+using System.Windows.Threading;
+using Wpf.Ui.Controls;
 
 namespace FocusTray;
 
@@ -62,8 +63,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Error starting session: {ex.Message}", "FocusTray", 
-                MessageBoxButton.OK, MessageBoxImage.Error);
+            ShowErrorNotification("FocusTray Error", $"Error starting session: {ex.Message}");
         }
     }
 
@@ -79,8 +79,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Error viewing session: {ex.Message}", "FocusTray", 
-                MessageBoxButton.OK, MessageBoxImage.Error);
+            ShowErrorNotification("FocusTray Error", $"Error viewing session: {ex.Message}");
         }
     }
 
@@ -88,10 +87,10 @@ public partial class MainWindow : Window
     {
         if (_timerService.IsRunning == true)
         {
-            var result = MessageBox.Show("Are you sure you want to end the current focus session?", 
-                "FocusTray", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            var result = System.Windows.MessageBox.Show("Are you sure you want to end the current focus session?", 
+                "FocusTray", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Question);
 
-            if (result == MessageBoxResult.Yes)
+            if (result == System.Windows.MessageBoxResult.Yes)
             {
                 _timerService.StopSession();
                 UpdateTrayMenuState();
@@ -171,16 +170,161 @@ public partial class MainWindow : Window
 
     private void ShowSessionCompletedNotification(FocusSession session)
     {
-        var message = $"Focus session completed!\n\nTask: {session.TaskDescription}\nDuration: {FormatTime(session.Duration)}";
-        var result = MessageBox.Show($"{message}\n\nWould you like to extend the session by 5 minutes?", 
-            "Session Completed", MessageBoxButton.YesNo, MessageBoxImage.Information);
+        // Show completion notification with Snackbar
+        ShowSuccessNotification(
+            "Session Completed!",
+            $"Task: {session.TaskDescription}\nDuration: {FormatTime(session.Duration)}"
+        );
 
-        if (result == MessageBoxResult.Yes)
+        // Show extension option with MessageBox (for user interaction)
+        var result = System.Windows.MessageBox.Show(
+            $"Focus session completed!\n\nTask: {session.TaskDescription}\nDuration: {FormatTime(session.Duration)}\n\nWould you like to extend the session by 5 minutes?", 
+            "Session Completed - FocusTray", 
+            System.Windows.MessageBoxButton.YesNo, 
+            System.Windows.MessageBoxImage.Question,
+            System.Windows.MessageBoxResult.No
+        );
+
+        if (result == System.Windows.MessageBoxResult.Yes)
         {
             _timerService.ExtendSession(TimeSpan.FromMinutes(5));
             _uiUpdateTimer?.Start();
             UpdateTrayMenuState();
+
+            // Refresh tooltip when extending session
+            UpdateTrayTooltip($"FocusTray - {FormatTime(_timerService.CurrentSession?.TimeRemaining ?? TimeSpan.Zero)} remaining");
+
+            // Show extension confirmation with Snackbar
+            ShowInfoNotification(
+                "Session Extended",
+                "Focus session extended by 5 minutes"
+            );
         }
+    }
+
+    private void ShowSuccessNotification(string title, string message)
+    {
+        CreateNotificationWindow(title, message, ControlAppearance.Success, SymbolRegular.CheckmarkCircle24);
+    }
+
+    private void ShowInfoNotification(string title, string message)
+    {
+        CreateNotificationWindow(title, message, ControlAppearance.Info, SymbolRegular.Info24);
+    }
+
+    private void ShowErrorNotification(string title, string message)
+    {
+        CreateNotificationWindow(title, message, ControlAppearance.Danger, SymbolRegular.ErrorCircle24);
+    }
+
+    private void CreateNotificationWindow(string title, string message, ControlAppearance appearance, SymbolRegular iconSymbol)
+    {
+        // Utwórz dedykowane okno dla notyfikacji
+        var notificationWindow = new Window
+        {
+            WindowStyle = WindowStyle.None,
+            ResizeMode = ResizeMode.NoResize,
+            AllowsTransparency = true,
+            Background = System.Windows.Media.Brushes.Transparent,
+            ShowInTaskbar = false,
+            Topmost = true,
+            Width = 350,
+            Height = 120,
+            Opacity = 0
+        };
+
+        // Pozycjonuj w prawym dolnym rogu ekranu z uwzględnieniem paska zadań
+        var workingArea = SystemParameters.WorkArea;
+        var screenHeight = SystemParameters.PrimaryScreenHeight;
+        var screenWidth = SystemParameters.PrimaryScreenWidth;
+
+        // Oblicz wysokość paska zadań
+        var taskbarHeight = screenHeight - workingArea.Height;
+
+        // Pozycjonowanie z marginesami i uwzględnieniem paska zadań
+        var marginRight = 20;
+        var marginBottom = 20;
+
+        notificationWindow.Left = workingArea.Right - notificationWindow.Width - marginRight;
+
+        // Jeśli pasek zadań jest na dole (standardowa konfiguracja)
+        if (workingArea.Bottom < screenHeight)
+        {
+            notificationWindow.Top = workingArea.Bottom - notificationWindow.Height - marginBottom;
+        }
+        // Jeśli pasek zadań jest na górze
+        else if (workingArea.Top > 0)
+        {
+            notificationWindow.Top = screenHeight - notificationWindow.Height - taskbarHeight - marginBottom;
+        }
+        // Fallback - standardowe pozycjonowanie
+        else
+        {
+            notificationWindow.Top = workingArea.Bottom - notificationWindow.Height - marginBottom;
+        }
+
+        // Upewnij się, że notyfikacja nie wyjdzie poza ekran
+        if (notificationWindow.Top < 0)
+        {
+            notificationWindow.Top = marginBottom;
+        }
+        if (notificationWindow.Left < 0)
+        {
+            notificationWindow.Left = marginRight;
+        }
+
+        // Utwórz zawartość używając WPF-UI InfoBar
+        var infoBar = new InfoBar
+        {
+            Title = title,
+            Message = message,
+            Severity = appearance switch
+            {
+                ControlAppearance.Success => InfoBarSeverity.Success,
+                ControlAppearance.Danger => InfoBarSeverity.Error,
+                ControlAppearance.Caution => InfoBarSeverity.Warning,
+                _ => InfoBarSeverity.Informational
+            },
+            IsOpen = true,
+            Margin = new Thickness(10)
+        };
+
+        notificationWindow.Content = infoBar;
+        notificationWindow.Show();
+
+        // Animacja fade-in
+        var fadeInAnimation = new System.Windows.Media.Animation.DoubleAnimation
+        {
+            From = 0.0,
+            To = 1.0,
+            Duration = TimeSpan.FromSeconds(0.3)
+        };
+        notificationWindow.BeginAnimation(Window.OpacityProperty, fadeInAnimation);
+
+        // Auto-zamknięcie po 5 sekundach
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+        timer.Tick += (s, e) =>
+        {
+            timer.Stop();
+
+            // Animacja fade-out przed zamknięciem
+            var fadeOutAnimation = new System.Windows.Media.Animation.DoubleAnimation
+            {
+                From = 1.0,
+                To = 0.0,
+                Duration = TimeSpan.FromSeconds(0.5)
+            };
+            fadeOutAnimation.Completed += (sender, args) => notificationWindow.Close();
+            notificationWindow.BeginAnimation(Window.OpacityProperty, fadeOutAnimation);
+        };
+        timer.Start();
+
+        // Możliwość zamknięcia przez kliknięcie
+        notificationWindow.MouseLeftButtonDown += (s, e) =>
+        {
+            timer.Stop();
+            notificationWindow.Close();
+        };
     }
 
     private static string FormatTime(TimeSpan time)
