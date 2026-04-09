@@ -14,14 +14,17 @@ namespace FocusTray;
 public partial class MainWindow : Window
 {
     private readonly ITimerService _timerService = default!;
+    private readonly IJiraService _jiraService = default!;
     private DispatcherTimer _uiUpdateTimer = default!;
     private SoundPlayer _notificationSound = default!;
+    private string? _currentSessionJiraIssueKey;
 
-    public MainWindow(ITimerService timerService)
+    public MainWindow(ITimerService timerService, IJiraService jiraService)
     {
         InitializeComponent();
 
         _timerService = timerService;
+        _jiraService = jiraService;
 
         InitializeWindow();
     }
@@ -57,6 +60,9 @@ public partial class MainWindow : Window
 
             if (result == true)
             {
+                // Store JIRA issue key if user selected one
+                _currentSessionJiraIssueKey = sessionDialog.SelectedJiraIssueKey;
+                
                 UpdateTrayMenuState();
                 UpdateTrayIcon(true);
                 _uiUpdateTimer?.Start();
@@ -93,7 +99,15 @@ public partial class MainWindow : Window
 
             if (result == System.Windows.MessageBoxResult.Yes)
             {
+                var session = _timerService.CurrentSession;
                 _timerService.StopSession();
+                
+                // Prompt for worklog if JIRA issue was selected
+                if (session != null)
+                {
+                    PromptForWorklog(session);
+                }
+                
                 UpdateTrayMenuState();
                 UpdateTrayIcon(false);
                 _uiUpdateTimer?.Stop();
@@ -105,6 +119,19 @@ public partial class MainWindow : Window
     private void Exit_Click(object sender, RoutedEventArgs e)
     {
         Application.Current.Shutdown();
+    }
+
+    private void JiraSettings_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var settingsDialog = App.Services.GetRequiredService<Views.JiraSettingsDialog>();
+            settingsDialog.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            ShowErrorNotification("FocusTray Error", $"Error opening JIRA settings: {ex.Message}");
+        }
     }
 
     private void TimerService_Tick(object? sender, TimeSpan timeRemaining)
@@ -133,6 +160,9 @@ public partial class MainWindow : Window
 
             // Show completion notification
             ShowSessionCompletedNotification(session);
+            
+            // Prompt for worklog if JIRA issue was selected
+            PromptForWorklog(session);
 
             UpdateTrayMenuState();
             UpdateTrayIcon(false);
@@ -214,6 +244,73 @@ public partial class MainWindow : Window
             .AddText(title)
             .AddText(message)
             .Show();
+    }
+
+    private async void PromptForWorklog(FocusSession session)
+    {
+        if (string.IsNullOrWhiteSpace(_currentSessionJiraIssueKey))
+        {
+            // No JIRA issue selected, skip worklog
+            _currentSessionJiraIssueKey = null;
+            return;
+        }
+
+        if (!_jiraService.IsEnabled)
+        {
+            // JIRA not enabled, skip
+            _currentSessionJiraIssueKey = null;
+            return;
+        }
+
+        try
+        {
+            // Round to nearest second to avoid rounding issues (e.g., 60.0 becoming 61)
+            var timeSpent = (int)Math.Round(session.TimeElapsed.TotalSeconds);
+            var issueKey = _currentSessionJiraIssueKey;
+            
+            var result = MessageBox.Show(
+                $"Would you like to log {FormatTime(session.TimeElapsed)} of work to JIRA issue {issueKey}?",
+                "Log Work to JIRA",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                var worklog = new JiraWorklog
+                {
+                    IssueKey = issueKey,
+                    TimeSpentSeconds = timeSpent,
+                    Comment = $"Focus session: {session.TaskDescription}",
+                    Started = session.StartTime
+                };
+
+                var success = await _jiraService.AddWorklogAsync(worklog);
+
+                if (success)
+                {
+                    ShowSuccessNotification(
+                        "Worklog Added",
+                        $"Successfully logged {FormatTime(session.TimeElapsed)} to {issueKey}");
+                }
+                else
+                {
+                    ShowErrorNotification(
+                        "Worklog Failed",
+                        $"Failed to log work to {issueKey}. Please check your JIRA configuration.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorNotification(
+                "Worklog Error",
+                $"Error logging work: {ex.Message}");
+        }
+        finally
+        {
+            // Clear the issue key for next session
+            _currentSessionJiraIssueKey = null;
+        }
     }
 
     private static string FormatTime(TimeSpan time)

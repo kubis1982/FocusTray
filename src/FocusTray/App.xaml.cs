@@ -1,6 +1,11 @@
 using FocusTray.Core.Services;
+using FocusTray.Infrastructure.Jira;
+using FocusTray.Services;
+using FocusTray.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
+using System.Net;
+using System.Net.Http;
 using System.Windows;
 
 namespace FocusTray;
@@ -23,11 +28,29 @@ public partial class App : Application
 
         services.AddLogging(builder => builder.AddSerilog());
 
+        // Add settings
+        services.AddSingleton<SettingsService>();
+
         // Add core services
         services.AddSingleton<ITimerService, TimerService>();
 
+        // Add JIRA integration
+        services.AddHttpClient<IJiraService, JiraService>()
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
+            });
+
+        services.AddSingleton<JiraConfiguration>(provider =>
+        {
+            var settingsService = provider.GetRequiredService<SettingsService>();
+            return settingsService.JiraConfiguration;
+        });
+
         // Add dialogs
+        services.AddTransient<SessionConfigDialogViewModel>();
         services.AddTransient<SessionConfigDialog>();
+        services.AddTransient<Views.JiraSettingsDialog>();
         services.AddTransient<MainWindow>();
 
         _serviceProvider = services.BuildServiceProvider();

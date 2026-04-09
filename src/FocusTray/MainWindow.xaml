@@ -31,6 +31,10 @@
                               Click="EndSession_Click"
                               IsEnabled="False"/>
                     <Separator/>
+                    <MenuItem Header="JIRA Settings..." 
+                              x:Name="JiraSettingsMenuItem"
+                              Click="JiraSettings_Click"/>
+                    <Separator/>
                     <MenuItem Header="Exit" 
                               Click="Exit_Click"/>
                 </ContextMenu>

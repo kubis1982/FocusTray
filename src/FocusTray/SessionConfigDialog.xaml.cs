@@ -1,53 +1,53 @@
 using System.Windows;
+using FocusTray.Core.Models;
 using FocusTray.Core.Services;
+using FocusTray.ViewModels;
 
 namespace FocusTray;
 
 public partial class SessionConfigDialog : Window
 {
     private readonly ITimerService _timerService;
+    private readonly SessionConfigDialogViewModel _viewModel;
 
-    public SessionConfigDialog(ITimerService timerService)
+    public SessionConfigDialog(
+        ITimerService timerService, 
+        SessionConfigDialogViewModel viewModel)
     {
         InitializeComponent();
+        
         _timerService = timerService;
+        _viewModel = viewModel;
+        
+        DataContext = _viewModel;
         
         TaskDescriptionTextBox.Focus();
     }
 
+    /// <summary>
+    /// Gets the selected JIRA issue key if user chose a JIRA issue, null otherwise.
+    /// </summary>
+    public string? SelectedJiraIssueKey { get; private set; }
+
     private void StartButton_Click(object sender, RoutedEventArgs e)
     {
-        var taskDescription = TaskDescriptionTextBox.Text.Trim();
-        
-        if (string.IsNullOrWhiteSpace(taskDescription))
+        var validationError = _viewModel.ValidateInput();
+        if (validationError != null)
         {
-            MessageBox.Show("Please enter a task description.", "FocusTray", 
+            MessageBox.Show(validationError, "FocusTray", 
                 MessageBoxButton.OK, MessageBoxImage.Warning);
-            TaskDescriptionTextBox.Focus();
-            return;
-        }
-
-        if (!int.TryParse(DurationTextBox.Text, out var durationMinutes) || durationMinutes <= 0)
-        {
-            MessageBox.Show("Please enter a valid duration in minutes (greater than 0).", "FocusTray", 
-                MessageBoxButton.OK, MessageBoxImage.Warning);
-            DurationTextBox.Focus();
-            DurationTextBox.SelectAll();
-            return;
-        }
-
-        if (durationMinutes > 1440) // 24 hours
-        {
-            MessageBox.Show("Duration cannot exceed 24 hours (1440 minutes).", "FocusTray", 
-                MessageBoxButton.OK, MessageBoxImage.Warning);
-            DurationTextBox.Focus();
-            DurationTextBox.SelectAll();
             return;
         }
 
         try
         {
-            _timerService.StartSession(taskDescription, TimeSpan.FromMinutes(durationMinutes));
+            var taskDescription = _viewModel.GetEffectiveTaskDescription();
+            var duration = TimeSpan.FromMinutes(_viewModel.DurationMinutes);
+            
+            _timerService.StartSession(taskDescription, duration);
+            
+            // Store the JIRA issue key for later worklog
+            SelectedJiraIssueKey = _viewModel.GetSelectedIssueKey();
             
             DialogResult = true;
             Close();
