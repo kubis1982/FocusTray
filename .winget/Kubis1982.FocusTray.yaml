@@ -3,3 +3,8 @@ PackageVersion: 0.1.0
 DefaultLocale: en-US
 ManifestType: version
 ManifestVersion: 1.12.0
+# This is the version manifest for the multi-file WinGet package
+# Ensure accompanying files exist:
+# - Kubis1982.FocusTray.installer.yaml
+# - Kubis1982.FocusTray.locale.en-US.yaml
+
