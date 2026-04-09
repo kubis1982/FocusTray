@@ -1,5 +1,10 @@
 # FocusTray
 
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/kubis1982/FocusTray)](https://github.com/kubis1982/FocusTray/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/download/dotnet/10.0)
+[![WinGet](https://img.shields.io/badge/WinGet-Kubis1982.FocusTray-blue)](https://github.com/microsoft/winget-pkgs)
+
 A minimalist Windows system tray application designed to help you maintain deep focus during work sessions by providing visual feedback and non-intrusive notifications.
 
 ![FocusTray Icon](src/FocusTray/Resources/bell-icon.ico)
@@ -43,10 +48,20 @@ FocusTray is a lightweight productivity tool that lives in your Windows system t
 
 ## Installation
 
+### Via WinGet (Recommended)
+
+```bash
+winget install Kubis1982.FocusTray
+```
+
+### Via GitHub Releases
+
+Download the latest release from [GitHub Releases](https://github.com/kubis1982/FocusTray/releases) and run the executable.
+
 ### Prerequisites
 
-- Windows 10 or later
-- .NET 10.0 Runtime (included with self-contained builds)
+- Windows 10 (build 19041) or later
+- No additional dependencies required (.NET 10.0 Runtime is embedded)
 
 ### Build from Source
 

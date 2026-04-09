@@ -1,0 +1,47 @@
+PackageIdentifier: Kubis1982.FocusTray
+PackageVersion: 0.1.0
+PackageLocale: en-US
+Publisher: Kubis1982
+PublisherUrl: https://github.com/kubis1982
+PublisherSupportUrl: https://github.com/kubis1982/FocusTray/issues
+# PrivacyUrl: 
+Author: Kubis1982
+PackageName: FocusTray
+PackageUrl: https://github.com/kubis1982/FocusTray
+License: MIT
+LicenseUrl: https://github.com/kubis1982/FocusTray/blob/main/LICENSE
+# Copyright: 
+# CopyrightUrl: 
+ShortDescription: A minimalist Windows system tray application for maintaining deep focus during work sessions
+Description: |-
+  FocusTray is a lightweight productivity tool that lives in your Windows system tray, helping you stay focused on your work with configurable focus sessions.
+  
+  Key features:
+  - Smart system tray integration with dynamic icons
+  - Customizable focus sessions (1 minute to 24 hours)
+  - JIRA integration with automatic worklog tracking
+  - Non-intrusive Windows toast notifications
+  - Visual session tracking with real-time countdown
+  - Session management (start, pause, resume, stop)
+  
+  Perfect for:
+  - Pomodoro technique practitioners
+  - Remote workers tracking time in JIRA
+  - Anyone seeking distraction-free work periods
+Moniker: focustray
+Tags:
+  - productivity
+  - focus
+  - timer
+  - pomodoro
+  - jira
+  - system-tray
+  - time-tracking
+# Agreements: 
+# ReleaseNotes: 
+ReleaseNotesUrl: https://github.com/kubis1982/FocusTray/releases
+# PurchaseUrl: 
+# InstallationNotes: 
+# Documentations: 
+ManifestType: defaultLocale
+ManifestVersion: 1.12.0

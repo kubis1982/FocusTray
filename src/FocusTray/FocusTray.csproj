@@ -32,16 +32,31 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<UseWPF>true</UseWPF>
 		<ApplicationIcon>Resources\favicon.ico</ApplicationIcon>
+		
+		<!-- Package Metadata -->
+		<Version>0.1.0</Version>
+		<Authors>Kubis</Authors>
+		<Company>Kubis</Company>
+		<Product>FocusTray</Product>
+		<Description>A minimalist Windows system tray application that helps you maintain deep focus during work sessions with JIRA integration</Description>
+		<Copyright>Copyright © 2026 Kubis</Copyright>
+		<PackageProjectUrl>https://github.com/kubis1982/FocusTray</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/kubis1982/FocusTray</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageTags>productivity;focus;timer;pomodoro;jira;system-tray;windows</PackageTags>
 	</PropertyGroup>
 
-	<!-- Self-contained deployment configuration (Release builds and publishing) -->
-	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
+	<!-- Self-contained deployment configuration (Release publishing only) -->
+	<PropertyGroup Condition="'$(Configuration)' == 'Release' AND '$(PublishDir)' != ''">
 		<SelfContained>true</SelfContained>
 		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
 		<PublishSingleFile>true</PublishSingleFile>
-		<PublishReadyToRun>true</PublishReadyToRun>
+		<PublishReadyToRun>false</PublishReadyToRun>
 		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
 		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+		<DebugType>none</DebugType>
+		<DebugSymbols>false</DebugSymbols>
 	</PropertyGroup>
 
 </Project>
