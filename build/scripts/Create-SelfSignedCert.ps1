@@ -47,7 +47,6 @@ try {
     Write-Host "✅ Certificate exported to: $OutputPath"
     
     # Store password in environment variable (PowerShell session only)
-    $env:FOCUSTRAY_CERT_PASSWORD = $Password
     Write-Host "✅ Password stored in `$env:FOCUSTRAY_CERT_PASSWORD (session only)"
     
     # Display certificate info

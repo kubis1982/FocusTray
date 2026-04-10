@@ -30,7 +30,7 @@
       <uap:VisualElements DisplayName="FocusTray"
                           Square150x150Logo="Assets\Square150x150Logo.png"
                           Square44x44Logo="Assets\Square44x44Logo.png"
-                          Description="A minimalist Windows system tray application that automates Deep Work sessions by synchronizing task timers with Microsoft Teams presence status"
+                          Description="A minimalist Windows system tray application designed to help you maintain deep focus during work sessions by providing visual feedback and non-intrusive notifications."
                           BackgroundColor="transparent">
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
       </uap:VisualElements>
