@@ -6,26 +6,23 @@
 #   .\Create-SelfSignedCert.ps1 -Password "MyPassword"    # Use provided password
 
 param(
-    [string]$Password,
+    [SecureString]$Password,
     [string]$OutputPath = (Join-Path $PSScriptRoot "..\certs\FocusTray-SignKey.pfx"),
     [int]$ValidityMonths = 12
 )
-
+    
 $ErrorActionPreference = "Stop"
 
 # Prompt for password if not provided
 if (-not $Password) {
-    $securePassword = Read-Host "Enter password for certificate" -AsSecureString
-    $Password = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
-        [System.Runtime.InteropServices.Marshal]::SecureStringToCoTaskMemUnicode($securePassword)
-    )
+    $Password = Read-Host "Enter password for certificate" -AsSecureString
 }
 
 Write-Host "🔐 Generating self-signed certificate for MSIX signing..."
 
 # Certificate parameters
 $params = @{
-    Subject = "CN=Kubis1982.FocusTray"
+    Subject = "CN=Kubis1982"
     FriendlyName = "FocusTray Self-Signed Testing Certificate"
     CertStoreLocation = "Cert:\CurrentUser\My"
     KeyExportPolicy = "Exportable"
@@ -41,12 +38,10 @@ try {
     $cert = New-SelfSignedCertificate @params
     Write-Host "✅ Certificate created: $($cert.Thumbprint)"
     
-    # Export to PFX
-    $securePass = ConvertTo-SecureString -String $Password -AsPlainText -Force
-    
+    # Export to PFX    
     Export-PfxCertificate -Cert "Cert:\CurrentUser\My\$($cert.Thumbprint)" `
                           -FilePath $OutputPath `
-                          -Password $securePass `
+                          -Password $Password `
                           -Force | Out-Null
     
     Write-Host "✅ Certificate exported to: $OutputPath"

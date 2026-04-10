@@ -59,4 +59,32 @@
 		<DebugSymbols>false</DebugSymbols>
 	</PropertyGroup>
 
+	<!-- MSIX Packaging Configuration -->
+	<PropertyGroup>
+		<!-- Package Identity for Microsoft Store -->
+		<PackageName>Kubis1982.FocusTray</PackageName>
+		<PackageDisplayName>FocusTray</PackageDisplayName>
+		<PublisherDisplayName>Kubis</PublisherDisplayName>
+		
+		<!-- Manifest and Assets -->
+		<AppxManifest>..\..\build\msix\AppxManifest.xml</AppxManifest>
+		<AppxPackageDir>$(MSBuildProjectDirectory)\..\..\AppPackage\</AppxPackageDir>
+		
+		<!-- Platform Settings -->
+		<AppxPlatform>x64</AppxPlatform>
+		<AppxGeneratePrisForPortableLibraries>true</AppxGeneratePrisForPortableLibraries>
+		<AppxUseHardlinksIfPossible>true</AppxUseHardlinksIfPossible>
+		<AppxSymbolPackageGeneration>false</AppxSymbolPackageGeneration>
+		
+		<!-- Deployment Target -->
+		<AppxMinimumOSVersion>10.0.19041.0</AppxMinimumOSVersion>
+		<AppxTargetDeviceFamily>Windows.Desktop</AppxTargetDeviceFamily>
+	</PropertyGroup>
+
+	<!-- MSIX Certificate Configuration (can be overridden at build time) -->
+	<PropertyGroup Condition="'$(AppxPackageSigningEnabled)' == ''">
+		<!-- By default, disable signing. Enable via -p:AppxPackageSigningEnabled=true at build time -->
+		<AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
+	</PropertyGroup>
+
 </Project>

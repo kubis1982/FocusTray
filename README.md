@@ -48,7 +48,7 @@ FocusTray is a lightweight productivity tool that lives in your Windows system t
 
 ## Installation
 
-### Via WinGet (Recommended)
+### Via WinGet
 
 ```bash
 winget install Kubis1982.FocusTray
@@ -221,6 +221,17 @@ FocusTray/
 - **Moq 4.20.72** - Mocking framework for tests
 
 ## Development
+
+### Building MSIX Package
+
+FocusTray is distributed as an MSIX (Microsoft Application Package) for Microsoft Store.
+
+**For Developers**: Build and test locally
+```bash
+cd FocusTray
+.\build\scripts\Create-SelfSignedCert.ps1  # Generate test certificate
+.\build\scripts\Build-MSIX.ps1             # Build MSIX package
+```
 
 ### Running Tests
 
