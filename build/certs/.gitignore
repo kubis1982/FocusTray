@@ -1,0 +1,16 @@
+# Certificate files - NEVER commit to git
+*.pfx
+*.cer
+*.key
+*.crt
+*.pem
+
+# Certificate password files
+*.pwd
+*.password
+
+# Build artifacts
+*.msix
+*.msixbundle
+*.appx
+*.appxbundle
