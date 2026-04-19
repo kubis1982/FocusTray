@@ -1,11 +1,10 @@
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
 using FocusTray.Core.Models;
 using FocusTray.Core.Services;
-using FocusTray.Infrastructure.Jira.Models;
+using Kubis1982.Atlassian.Jira.RestClient.V2;
+using Kubis1982.Atlassian.Jira.RestClient.V2.Models;
+using Kubis1982.Atlassian.RestClient;
 using Microsoft.Extensions.Logging;
+using Microsoft.Kiota.Abstractions.Serialization;
 
 namespace FocusTray.Infrastructure.Jira;
 
@@ -14,7 +13,7 @@ namespace FocusTray.Infrastructure.Jira;
 /// </summary>
 public class JiraService : IJiraService
 {
-    private readonly HttpClient _httpClient;
+    private readonly JiraRestClient _jiraClient;
     private readonly JiraConfiguration _configuration;
     private readonly ILogger<JiraService> _logger;
 
@@ -23,11 +22,13 @@ public class JiraService : IJiraService
         JiraConfiguration configuration,
         ILogger<JiraService> logger)
     {
-        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _ = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        ConfigureHttpClient();
+        var basicAuthProvider = new BasicAuthProvider(_configuration.Email, _configuration.ApiToken);
+
+        _jiraClient = JiraRestClient.Create(_configuration.Company, basicAuthProvider, httpClient); 
     }
 
     public bool IsEnabled => _configuration.IsValid;
@@ -42,17 +43,17 @@ public class JiraService : IJiraService
 
         try
         {
-            _logger.LogInformation("Testing JIRA connection to {BaseUrl}", _configuration.BaseUrl);
-            
-            var response = await _httpClient.GetAsync("/rest/api/3/myself");
-            
-            if (response.IsSuccessStatusCode)
+            _logger.LogInformation("Testing JIRA connection to {Company}", _configuration.Company);
+
+            var user = await _jiraClient.Rest.Api.Two.Myself.GetAsync();
+
+            if (user != null)
             {
                 _logger.LogInformation("JIRA connection test successful");
                 return true;
             }
 
-            _logger.LogWarning("JIRA connection test failed with status {StatusCode}", response.StatusCode);
+            _logger.LogWarning("JIRA connection test failed: user is null");
             return false;
         }
         catch (Exception ex)
@@ -74,24 +75,39 @@ public class JiraService : IJiraService
         {
             _logger.LogInformation("Fetching assigned JIRA issues with JQL: {JQL}", _configuration.JqlFilter);
 
-            var encodedJql = Uri.EscapeDataString(_configuration.JqlFilter);
-            var url = $"/rest/api/3/search/jql?jql={encodedJql}&fields=key,summary,issuetype,status&maxResults=100";
 
-            var response = await _httpClient.GetFromJsonAsync<JiraSearchResponse>(url);
+            var searchResponse = await _jiraClient.Rest.Api.Two.Search.Jql.GetAsync(q =>
+            {
+                q.QueryParameters.Jql = _configuration.JqlFilter;
+                q.QueryParameters.Fields = new[] { "key", "summary", "issuetype", "status" };
+                q.QueryParameters.MaxResults = 100;
+            });
 
-            if (response?.Issues == null)
+            if (searchResponse?.Issues == null)
             {
                 _logger.LogWarning("No issues returned from JIRA");
                 return Array.Empty<JiraIssue>();
             }
 
-            var issues = response.Issues
-                .Select(dto => new JiraIssue
+            var issues = searchResponse.Issues
+                .Select(issue =>
                 {
-                    Key = dto.Key,
-                    Summary = dto.Fields.Summary,
-                    IssueType = dto.Fields.IssueType?.Name ?? "Unknown",
-                    Status = dto.Fields.Status?.Name ?? "Unknown"
+                    var fields = issue.Fields?.AdditionalData;
+                    var summary = fields?.TryGetValue("summary", out var summaryObj) == true ? summaryObj?.ToString() : null;
+                    var issueType = fields?.TryGetValue("issuetype", out var issueTypeObj) == true && issueTypeObj is IParsable issueTypeParsable
+                        ? (issueTypeParsable as IssueTypeDetails)?.Name ?? "Unknown"
+                        : "Unknown";
+                    var status = fields?.TryGetValue("status", out var statusObj) == true && statusObj is IParsable statusParsable
+                        ? (statusParsable as StatusDetails)?.Name ?? "Unknown"
+                        : "Unknown";
+
+                    return new JiraIssue
+                    {
+                        Key = issue.Key!,
+                        Summary = summary!,
+                        IssueType = issueType,
+                        Status = status
+                    };
                 })
                 .ToList();
 
@@ -122,107 +138,28 @@ public class JiraService : IJiraService
         try
         {
             _logger.LogInformation(
-                "Adding worklog to {IssueKey}: {Seconds}s",
+                "Adding worklog to {IssueKey}: {Seconds}s on company {Company}",
                 worklog.IssueKey,
-                worklog.TimeSpentSeconds);
+                worklog.TimeSpentSeconds,
+                _configuration.Company);
 
-            var url = $"/rest/api/3/issue/{worklog.IssueKey}/worklog";
-            
-            // Format date as: yyyy-MM-dd'T'HH:mm:ss.SSS+0000 (JIRA expects +0000, not +00:00)
-            var startedDate = worklog.Started.ToUniversalTime();
-            var startedFormatted = startedDate.ToString("yyyy-MM-ddTHH:mm:ss.fff") + "+0000";
-            
-            var request = new JiraWorklogRequest
+            var worklogRequest = new Worklog
             {
                 TimeSpentSeconds = worklog.TimeSpentSeconds,
-                Comment = new JiraCommentAdf
-                {
-                    Type = "doc",
-                    Version = 1,
-                    Content = new List<JiraContentNode>
-                    {
-                        new JiraContentNode
-                        {
-                            Type = "paragraph",
-                            Content = new List<JiraTextNode>
-                            {
-                                new JiraTextNode
-                                {
-                                    Type = "text",
-                                    Text = worklog.Comment
-                                }
-                            }
-                        }
-                    }
-                },
-                Started = startedFormatted
+                Started = worklog.Started,
+                Comment = worklog.Comment
             };
 
-            var response = await _httpClient.PostAsJsonAsync(url, request);
+            await _jiraClient.Rest.Api.Two.Issue[worklog.IssueKey].Worklog.PostAsync(worklogRequest);
 
-            if (response.IsSuccessStatusCode)
-            {
-                _logger.LogInformation("Worklog added successfully to {IssueKey}", worklog.IssueKey);
-                return true;
-            }
+            _logger.LogInformation("Worklog added successfully to {IssueKey}", worklog.IssueKey);
 
-            // Parse and log detailed error response
-            var errorContent = await response.Content.ReadAsStringAsync();
-            
-            try
-            {
-                var errorResponse = JsonSerializer.Deserialize<JiraErrorResponse>(errorContent);
-                if (errorResponse != null)
-                {
-                    var formattedError = errorResponse.GetFormattedErrorMessage();
-                    _logger.LogWarning(
-                        "Failed to add worklog to {IssueKey}. Status: {StatusCode}, Error: {Error}",
-                        worklog.IssueKey,
-                        response.StatusCode,
-                        formattedError);
-                }
-                else
-                {
-                    _logger.LogWarning(
-                        "Failed to add worklog to {IssueKey}. Status: {StatusCode}, Raw response: {Response}",
-                        worklog.IssueKey,
-                        response.StatusCode,
-                        errorContent);
-                }
-            }
-            catch
-            {
-                // If parsing fails, log raw content
-                _logger.LogWarning(
-                    "Failed to add worklog to {IssueKey}. Status: {StatusCode}, Raw response: {Response}",
-                    worklog.IssueKey,
-                    response.StatusCode,
-                    errorContent);
-            }
-            
-            return false;
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error adding worklog to {IssueKey}", worklog.IssueKey);
             return false;
         }
-    }
-
-    private void ConfigureHttpClient()
-    {
-        if (!_configuration.IsValid)
-            return;
-
-        _httpClient.BaseAddress = new Uri(_configuration.BaseUrl);
-        
-        var credentials = Convert.ToBase64String(
-            Encoding.ASCII.GetBytes($"{_configuration.Email}:{_configuration.ApiToken}"));
-        
-        _httpClient.DefaultRequestHeaders.Authorization = 
-            new AuthenticationHeaderValue("Basic", credentials);
-        
-        _httpClient.DefaultRequestHeaders.Accept.Add(
-            new MediaTypeWithQualityHeaderValue("application/json"));
     }
 }

@@ -23,7 +23,7 @@ public partial class JiraSettingsDialog : Window
         _configuration = _settingsService.JiraConfiguration;
 
         EnabledCheckBox.IsChecked = _configuration.Enabled;
-        BaseUrlTextBox.Text = _configuration.BaseUrl;
+        CompanyTextBox.Text = _configuration.Company;
         EmailTextBox.Text = _configuration.Email;
         JqlFilterTextBox.Text = _configuration.JqlFilter;
 
@@ -40,7 +40,7 @@ public partial class JiraSettingsDialog : Window
         var testConfig = new JiraConfiguration
         {
             Enabled = true,
-            BaseUrl = BaseUrlTextBox.Text.Trim(),
+            Company = CompanyTextBox.Text.Trim(),
             Email = EmailTextBox.Text.Trim(),
             ApiToken = ApiTokenPasswordBox.Password.Trim(),
             JqlFilter = JqlFilterTextBox.Text.Trim()
@@ -83,7 +83,7 @@ public partial class JiraSettingsDialog : Window
     private void Save_Click(object sender, RoutedEventArgs e)
     {
         var enabled = EnabledCheckBox.IsChecked == true;
-        var baseUrl = BaseUrlTextBox.Text.Trim();
+        var company = CompanyTextBox.Text.Trim();
         var email = EmailTextBox.Text.Trim();
         var apiToken = ApiTokenPasswordBox.Password.Trim();
         var jqlFilter = JqlFilterTextBox.Text.Trim();
@@ -96,7 +96,7 @@ public partial class JiraSettingsDialog : Window
 
         // Update configuration
         _configuration.Enabled = enabled;
-        _configuration.BaseUrl = baseUrl;
+        _configuration.Company = company;
         _configuration.Email = email;
         _configuration.JqlFilter = jqlFilter;
 
