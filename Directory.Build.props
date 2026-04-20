@@ -1,0 +1,21 @@
+<Project>
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<LangVersion>latest</LangVersion>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<Version>0.2.0</Version>
+		<Authors>Kubis</Authors>
+		<Company>Kubis</Company>
+		<Copyright>Copyright © 2026 Kubis</Copyright>
+		<PackageProjectUrl>https://github.com/kubis1982/FocusTray</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/kubis1982/FocusTray</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+	</PropertyGroup>
+
+</Project>
