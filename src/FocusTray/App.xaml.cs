@@ -4,7 +4,6 @@ using FocusTray.Services;
 using FocusTray.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
-using System.Net;
 using System.Net.Http;
 using System.Windows;
 
@@ -69,4 +68,3 @@ public partial class App : Application
         base.OnExit(e);
     }
 }
-

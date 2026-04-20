@@ -26,11 +26,11 @@ public class JiraServiceIntegrationTests : IDisposable
     {
         _httpClient = new HttpClient();
         
-        var baseUrl = Environment.GetEnvironmentVariable("JIRA_BASE_URL");
+        var company = Environment.GetEnvironmentVariable("JIRA_BASE_URL");
         var email = Environment.GetEnvironmentVariable("JIRA_EMAIL");
         var apiToken = Environment.GetEnvironmentVariable("JIRA_API_TOKEN");
 
-        if (string.IsNullOrWhiteSpace(baseUrl) || 
+        if (string.IsNullOrWhiteSpace(company) || 
             string.IsNullOrWhiteSpace(email) || 
             string.IsNullOrWhiteSpace(apiToken))
         {
@@ -45,7 +45,7 @@ public class JiraServiceIntegrationTests : IDisposable
         var configuration = new JiraConfiguration
         {
             Enabled = true,
-            BaseUrl = baseUrl,
+            Company = company,
             Email = email,
             ApiToken = apiToken,
             JqlFilter = "assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC"

@@ -11,9 +11,9 @@ public class JiraConfiguration
     public bool Enabled { get; set; }
     
     /// <summary>
-    /// Gets or sets the JIRA base URL (e.g., "https://yourcompany.atlassian.net").
+    /// Gets or sets the JIRA company name (e.g., "yourcompany").
     /// </summary>
-    public string BaseUrl { get; set; } = string.Empty;
+    public string Company { get; set; } = string.Empty;
     
     /// <summary>
     /// Gets or sets the user email for authentication (Atlassian Cloud).
@@ -36,7 +36,7 @@ public class JiraConfiguration
     /// </summary>
     public bool IsValid =>
         Enabled &&
-        !string.IsNullOrWhiteSpace(BaseUrl) &&
+        !string.IsNullOrWhiteSpace(Company) &&
         !string.IsNullOrWhiteSpace(Email) &&
         !string.IsNullOrWhiteSpace(ApiToken);
 }

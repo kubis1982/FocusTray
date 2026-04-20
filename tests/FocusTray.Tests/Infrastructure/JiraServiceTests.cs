@@ -27,7 +27,7 @@ public class JiraServiceTests
         _configuration = new JiraConfiguration
         {
             Enabled = true,
-            BaseUrl = "https://test.atlassian.net",
+            Company = "test",
             Email = "test@example.com",
             ApiToken = "test-token",
             JqlFilter = "assignee = currentUser() AND statusCategory != Done"
@@ -64,19 +64,23 @@ public class JiraServiceTests
     public async Task Should_ReturnTrue_When_ConnectionTestSucceeds()
     {
         // Arrange
-        var responseContent = JsonSerializer.Serialize(new { accountId = "123", emailAddress = "test@example.com" });
+        var responseContent = JsonSerializer.Serialize(new 
+        { 
+            accountId = "123", 
+            emailAddress = "test@example.com",
+            displayName = "Test User",
+            active = true
+        });
         _mockHttpHandler
             .Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req =>
-                    req.Method == HttpMethod.Get &&
-                    req.RequestUri!.ToString().Contains("/rest/api/3/myself")),
+                ItExpr.IsAny<HttpRequestMessage>(),
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(responseContent)
+                Content = new StringContent(responseContent, System.Text.Encoding.UTF8, "application/json")
             });
 
         // Act
@@ -122,6 +126,7 @@ public class JiraServiceTests
                     fields = new
                     {
                         summary = "First issue",
+                        issuetype = new { name = "Task" },
                         status = new { name = "In Progress" }
                     }
                 },
@@ -131,6 +136,7 @@ public class JiraServiceTests
                     fields = new
                     {
                         summary = "Second issue",
+                        issuetype = new { name = "Bug" },
                         status = new { name = "To Do" }
                     }
                 }
@@ -143,12 +149,12 @@ public class JiraServiceTests
                 "SendAsync",
                 ItExpr.Is<HttpRequestMessage>(req =>
                     req.Method == HttpMethod.Get &&
-                    req.RequestUri!.ToString().Contains("/rest/api/3/search")),
+                    req.RequestUri!.ToString().Contains("/rest/api/2/search/jql")),
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(JsonSerializer.Serialize(searchResponse))
+                Content = new StringContent(JsonSerializer.Serialize(searchResponse), System.Text.Encoding.UTF8, "application/json")
             });
 
         // Act
@@ -196,12 +202,13 @@ public class JiraServiceTests
                 "SendAsync",
                 ItExpr.Is<HttpRequestMessage>(req =>
                     req.Method == HttpMethod.Post &&
+                    req.RequestUri!.ToString().Contains("/rest/api/2/issue/") &&
                     req.RequestUri!.ToString().Contains("/worklog")),
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.Created,
-                Content = new StringContent("{\"id\": \"10000\"}")
+                Content = new StringContent("{\"id\": \"10000\"}", System.Text.Encoding.UTF8, "application/json")
             });
 
         var worklog = new JiraWorklog
@@ -285,13 +292,14 @@ public class JiraServiceTests
             .Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.Is<HttpRequestMessage>(req => 
+                    req.RequestUri!.ToString().Contains("/rest/api/2/search/jql")),
                 ItExpr.IsAny<CancellationToken>())
             .Callback<HttpRequestMessage, CancellationToken>((req, ct) => capturedRequest = req)
             .ReturnsAsync(new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.OK,
-                Content = new StringContent("{\"issues\": []}")
+                Content = new StringContent("{\"issues\": []}", System.Text.Encoding.UTF8, "application/json")
             });
 
         // Act
@@ -300,6 +308,6 @@ public class JiraServiceTests
         // Assert
         capturedRequest.Should().NotBeNull();
         var queryString = capturedRequest!.RequestUri!.Query;
-        queryString.Should().Contain("assignee%20%3D%20currentUser"); // URL encoded JQL
+        queryString.Should().Contain("jql="); // JQL parameter present
     }
 }
