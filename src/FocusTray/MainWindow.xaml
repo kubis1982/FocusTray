@@ -31,9 +31,25 @@
                               Click="EndSession_Click"
                               IsEnabled="False"/>
                     <Separator/>
-                    <MenuItem Header="JIRA Settings..." 
-                              x:Name="JiraSettingsMenuItem"
-                              Click="JiraSettings_Click"/>
+                    <!-- JIRA Submenu -->
+                    <MenuItem Header="JIRA" 
+                              x:Name="JiraMenuItem">
+                        <MenuItem Header="Login to JIRA" 
+                                  x:Name="JiraLoginSubMenuItem"
+                                  Click="JiraLogin_Click"/>
+                        <MenuItem Header="Logged in as: username" 
+                                  x:Name="JiraStatusSubMenuItem"
+                                  IsEnabled="False"
+                                  Visibility="Collapsed"/>
+                        <MenuItem Header="Settings..." 
+                                  x:Name="JiraSettingsSubMenuItem"
+                                  Click="JiraAdvancedSettings_Click"
+                                  Visibility="Collapsed"/>
+                        <MenuItem Header="Logout" 
+                                  x:Name="JiraLogoutSubMenuItem"
+                                  Click="JiraLogout_Click"
+                                  Visibility="Collapsed"/>
+                    </MenuItem>
                     <Separator/>
                     <MenuItem Header="Exit" 
                               Click="Exit_Click"/>

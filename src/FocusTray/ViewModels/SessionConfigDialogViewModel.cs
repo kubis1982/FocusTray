@@ -12,6 +12,7 @@ namespace FocusTray.ViewModels;
 public partial class SessionConfigDialogViewModel : ObservableObject
 {
     private readonly IJiraService _jiraService;
+    private readonly IJiraAuthService _authService;
 
     [ObservableProperty]
     private string _taskDescription = string.Empty;
@@ -34,24 +35,31 @@ public partial class SessionConfigDialogViewModel : ObservableObject
     [ObservableProperty]
     private string _errorMessage = string.Empty;
 
-    public SessionConfigDialogViewModel(IJiraService jiraService)
+    public SessionConfigDialogViewModel(IJiraService jiraService, IJiraAuthService authService)
     {
         _jiraService = jiraService ?? throw new ArgumentNullException(nameof(jiraService));
+        _authService = authService ?? throw new ArgumentNullException(nameof(authService));
         
-        // Don't auto-load issues - wait until user checks "Use JIRA issue"
+        // Auto-load issues if user is logged in
+        if (_authService.IsLoggedIn)
+        {
+            _ = LoadJiraIssuesAsync();
+            UseJiraIssue = true; // Default to using JIRA if logged in
+        }
     }
 
     /// <summary>
     /// Gets whether JIRA integration is available.
     /// </summary>
-    public bool IsJiraEnabled => _jiraService.IsEnabled;
+    public bool IsJiraEnabled => _authService.IsLoggedIn;
 
     /// <summary>
     /// Gets the effective task description (from JIRA issue or manual input).
     /// </summary>
     public string GetEffectiveTaskDescription()
     {
-        if (UseJiraIssue && SelectedIssue != null)
+        // When logged in to JIRA, always use JIRA issue if selected
+        if (IsJiraEnabled && SelectedIssue != null)
         {
             return SelectedIssue.DisplayText;
         }
@@ -64,15 +72,16 @@ public partial class SessionConfigDialogViewModel : ObservableObject
     /// </summary>
     public string? GetSelectedIssueKey()
     {
-        return UseJiraIssue ? SelectedIssue?.Key : null;
+        // When logged in to JIRA, always return selected issue key
+        return IsJiraEnabled ? SelectedIssue?.Key : null;
     }
 
     [RelayCommand]
     private async Task LoadJiraIssuesAsync()
     {
-        if (!_jiraService.IsEnabled)
+        if (!_authService.IsLoggedIn)
         {
-            ErrorMessage = "JIRA integration is not configured.";
+            ErrorMessage = "Please login to JIRA first.";
             return;
         }
 
@@ -109,15 +118,16 @@ public partial class SessionConfigDialogViewModel : ObservableObject
     /// </summary>
     public string? ValidateInput()
     {
-        if (UseJiraIssue && SelectedIssue == null)
+        // When logged in to JIRA, require a selected issue
+        if (IsJiraEnabled && SelectedIssue == null)
         {
-            return "Please select a JIRA issue or uncheck 'Use JIRA issue'.";
+            return "Please select a JIRA issue from the list.";
         }
 
-        var effectiveDescription = GetEffectiveTaskDescription();
-        if (string.IsNullOrWhiteSpace(effectiveDescription))
+        // When not logged in, require manual task description
+        if (!IsJiraEnabled && string.IsNullOrWhiteSpace(TaskDescription))
         {
-            return "Please enter a task description or select a JIRA issue.";
+            return "Please enter a task description.";
         }
 
         if (DurationMinutes <= 0)
@@ -131,20 +141,5 @@ public partial class SessionConfigDialogViewModel : ObservableObject
         }
 
         return null;
-    }
-
-    partial void OnUseJiraIssueChanged(bool value)
-    {
-        // Clear manual description when switching to JIRA mode
-        if (value)
-        {
-            TaskDescription = string.Empty;
-            
-            // Load JIRA issues when user enables the checkbox
-            if (_jiraService.IsEnabled && JiraIssues.Count == 0)
-            {
-                _ = LoadJiraIssuesAsync();
-            }
-        }
     }
 }

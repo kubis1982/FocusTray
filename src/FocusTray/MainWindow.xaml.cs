@@ -15,16 +15,18 @@ public partial class MainWindow : Window
 {
     private readonly ITimerService _timerService = default!;
     private readonly IJiraService _jiraService = default!;
+    private readonly IJiraAuthService _authService = default!;
     private DispatcherTimer _uiUpdateTimer = default!;
     private SoundPlayer _notificationSound = default!;
     private string? _currentSessionJiraIssueKey;
 
-    public MainWindow(ITimerService timerService, IJiraService jiraService)
+    public MainWindow(ITimerService timerService, IJiraService jiraService, IJiraAuthService authService)
     {
         InitializeComponent();
 
         _timerService = timerService;
         _jiraService = jiraService;
+        _authService = authService;
 
         InitializeWindow();
     }
@@ -45,6 +47,12 @@ public partial class MainWindow : Window
         _timerService.Tick += TimerService_Tick;
         _timerService.SessionCompleted += TimerService_SessionCompleted;
         _timerService.StateChanged += TimerService_StateChanged;
+
+        // Subscribe to auth state changes
+        _authService.AuthStateChanged += AuthService_AuthStateChanged;
+
+        // Update JIRA menu state on initialization
+        UpdateJiraMenuState();
 
         // Hide window on startup
         WindowState = WindowState.Minimized;
@@ -121,16 +129,80 @@ public partial class MainWindow : Window
         Application.Current.Shutdown();
     }
 
-    private void JiraSettings_Click(object sender, RoutedEventArgs e)
+    private void JiraLogin_Click(object sender, RoutedEventArgs e)
     {
         try
         {
-            var settingsDialog = App.Services.GetRequiredService<Views.JiraSettingsDialog>();
+            var loginDialog = App.Services.GetRequiredService<Views.JiraLoginDialog>();
+            loginDialog.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            ShowErrorNotification("FocusTray Error", $"Error opening JIRA login: {ex.Message}");
+        }
+    }
+
+    private async void JiraLogout_Click(object sender, RoutedEventArgs e)
+    {
+        var result = MessageBox.Show(
+            "Are you sure you want to logout from JIRA? Your credentials will be removed.",
+            "Logout from JIRA",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (result == MessageBoxResult.Yes)
+        {
+            try
+            {
+                await _authService.LogoutAsync();
+                ShowInfoNotification("JIRA Logout", "Successfully logged out from JIRA");
+            }
+            catch (Exception ex)
+            {
+                ShowErrorNotification("FocusTray Error", $"Error during logout: {ex.Message}");
+            }
+        }
+    }
+
+    private void JiraAdvancedSettings_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var settingsDialog = App.Services.GetRequiredService<Views.JiraAdvancedSettingsDialog>();
             settingsDialog.ShowDialog();
         }
         catch (Exception ex)
         {
             ShowErrorNotification("FocusTray Error", $"Error opening JIRA settings: {ex.Message}");
+        }
+    }
+
+    private void AuthService_AuthStateChanged(object? sender, AuthStateChangedEventArgs e)
+    {
+        Dispatcher.InvokeAsync(() =>
+        {
+            UpdateJiraMenuState();
+        });
+    }
+
+    private void UpdateJiraMenuState()
+    {
+        var isLoggedIn = _authService.IsLoggedIn;
+
+        // Update visibility of submenu items based on login state
+        JiraLoginSubMenuItem.Visibility = isLoggedIn ? Visibility.Collapsed : Visibility.Visible;
+        JiraStatusSubMenuItem.Visibility = isLoggedIn ? Visibility.Visible : Visibility.Collapsed;
+        JiraSettingsSubMenuItem.Visibility = isLoggedIn ? Visibility.Visible : Visibility.Collapsed;
+        JiraLogoutSubMenuItem.Visibility = isLoggedIn ? Visibility.Visible : Visibility.Collapsed;
+
+        // Update status text
+        if (isLoggedIn && !string.IsNullOrWhiteSpace(_authService.CurrentUsername))
+        {
+            JiraStatusSubMenuItem.Header = $"Logged in as: {_authService.CurrentUsername}";
+        }
+        else
+        {
+            JiraStatusSubMenuItem.Header = "Logged in as: username";
         }
     }
 
@@ -329,6 +401,8 @@ public partial class MainWindow : Window
         _timerService.Tick -= TimerService_Tick;
         _timerService.SessionCompleted -= TimerService_SessionCompleted;
         _timerService.StateChanged -= TimerService_StateChanged;
+        
+        _authService.AuthStateChanged -= AuthService_AuthStateChanged;
 
         TrayIcon?.Dispose();
         _notificationSound?.Dispose();

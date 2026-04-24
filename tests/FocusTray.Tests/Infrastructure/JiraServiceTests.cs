@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using FocusTray.Core.Models;
+using FocusTray.Core.Services;
 using FocusTray.Infrastructure.Jira;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -15,6 +16,8 @@ public class JiraServiceTests
     private readonly Mock<HttpMessageHandler> _mockHttpHandler;
     private readonly HttpClient _httpClient;
     private readonly Mock<ILogger<JiraService>> _mockLogger;
+    private readonly Mock<IJiraAuthService> _mockAuthService;
+    private readonly Mock<ICredentialService> _mockCredentialService;
     private readonly JiraConfiguration _configuration;
     private readonly JiraService _jiraService;
 
@@ -23,22 +26,39 @@ public class JiraServiceTests
         _mockHttpHandler = new Mock<HttpMessageHandler>();
         _httpClient = new HttpClient(_mockHttpHandler.Object);
         _mockLogger = new Mock<ILogger<JiraService>>();
+        _mockAuthService = new Mock<IJiraAuthService>();
+        _mockCredentialService = new Mock<ICredentialService>();
         
         _configuration = new JiraConfiguration
         {
-            Enabled = true,
             Company = "test",
-            Email = "test@example.com",
-            ApiToken = "test-token",
             JqlFilter = "assignee = currentUser() AND statusCategory != Done"
         };
 
-        _jiraService = new JiraService(_httpClient, _configuration, _mockLogger.Object);
+        // Setup default auth service behavior
+        _mockAuthService.Setup(x => x.IsLoggedIn).Returns(true);
+        _mockAuthService.Setup(x => x.CurrentCompany).Returns("test");
+        _mockAuthService.Setup(x => x.CurrentUsername).Returns("Test User");
+        
+        // Setup default credential service behavior
+        _mockCredentialService
+            .Setup(x => x.LoadCredentials("FocusTray_Jira"))
+            .Returns(("test@example.com", "test-token"));
+
+        _jiraService = new JiraService(
+            _mockAuthService.Object,
+            _mockCredentialService.Object,
+            _configuration,
+            _httpClient,
+            _mockLogger.Object);
     }
 
     [Fact]
-    public void Should_ReturnEnabled_When_ConfigurationIsEnabled()
+    public void Should_ReturnEnabled_When_UserIsLoggedIn()
     {
+        // Arrange
+        _mockAuthService.Setup(x => x.IsLoggedIn).Returns(true);
+
         // Act
         var isEnabled = _jiraService.IsEnabled;
 
@@ -47,11 +67,11 @@ public class JiraServiceTests
     }
 
     [Fact]
-    public void Should_ReturnDisabled_When_ConfigurationIsDisabled()
+    public void Should_ReturnDisabled_When_UserIsNotLoggedIn()
     {
         // Arrange
-        var disabledConfig = new JiraConfiguration { Enabled = false };
-        var service = new JiraService(_httpClient, disabledConfig, _mockLogger.Object);
+        _mockAuthService.Setup(x => x.IsLoggedIn).Returns(false);
+        var service = new JiraService(_mockAuthService.Object, _mockCredentialService.Object, _configuration, _httpClient, _mockLogger.Object);
 
         // Act
         var isEnabled = service.IsEnabled;

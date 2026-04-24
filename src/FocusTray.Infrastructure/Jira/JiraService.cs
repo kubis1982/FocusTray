@@ -13,39 +13,47 @@ namespace FocusTray.Infrastructure.Jira;
 /// </summary>
 public class JiraService : IJiraService
 {
-    private readonly JiraRestClient _jiraClient;
+    private readonly IJiraAuthService _authService;
+    private readonly ICredentialService _credentialService;
     private readonly JiraConfiguration _configuration;
+    private readonly HttpClient _httpClient;
     private readonly ILogger<JiraService> _logger;
 
     public JiraService(
-        HttpClient httpClient,
+        IJiraAuthService authService,
+        ICredentialService credentialService,
         JiraConfiguration configuration,
+        HttpClient httpClient,
         ILogger<JiraService> logger)
     {
-        _ = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+        _credentialService = credentialService ?? throw new ArgumentNullException(nameof(credentialService));
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
-        var basicAuthProvider = new BasicAuthProvider(_configuration.Email, _configuration.ApiToken);
-
-        _jiraClient = JiraRestClient.Create(_configuration.Company, basicAuthProvider, httpClient); 
     }
 
-    public bool IsEnabled => _configuration.IsValid;
+    public bool IsEnabled => _authService.IsLoggedIn;
 
     public async Task<bool> TestConnectionAsync()
     {
-        if (!_configuration.IsValid)
+        if (!_authService.IsLoggedIn)
         {
-            _logger.LogWarning("JIRA configuration is invalid or disabled");
+            _logger.LogWarning("JIRA user is not logged in");
             return false;
         }
 
         try
         {
-            _logger.LogInformation("Testing JIRA connection to {Company}", _configuration.Company);
+            var jiraClient = CreateJiraClient();
+            if (jiraClient == null)
+            {
+                return false;
+            }
 
-            var user = await _jiraClient.Rest.Api.Two.Myself.GetAsync();
+            _logger.LogInformation("Testing JIRA connection to {Company}", _authService.CurrentCompany);
+
+            var user = await jiraClient.Rest.Api.Two.Myself.GetAsync();
 
             if (user != null)
             {
@@ -65,18 +73,23 @@ public class JiraService : IJiraService
 
     public async Task<IReadOnlyList<JiraIssue>> GetAssignedIssuesAsync()
     {
-        if (!_configuration.IsValid)
+        if (!_authService.IsLoggedIn)
         {
-            _logger.LogWarning("JIRA is not configured or disabled");
+            _logger.LogWarning("JIRA user is not logged in");
             return Array.Empty<JiraIssue>();
         }
 
         try
         {
+            var jiraClient = CreateJiraClient();
+            if (jiraClient == null)
+            {
+                return Array.Empty<JiraIssue>();
+            }
+
             _logger.LogInformation("Fetching assigned JIRA issues with JQL: {JQL}", _configuration.JqlFilter);
 
-
-            var searchResponse = await _jiraClient.Rest.Api.Two.Search.Jql.GetAsync(q =>
+            var searchResponse = await jiraClient.Rest.Api.Two.Search.Jql.GetAsync(q =>
             {
                 q.QueryParameters.Jql = _configuration.JqlFilter;
                 q.QueryParameters.Fields = new[] { "key", "summary", "issuetype", "status" };
@@ -123,9 +136,9 @@ public class JiraService : IJiraService
 
     public async Task<bool> AddWorklogAsync(JiraWorklog worklog)
     {
-        if (!_configuration.IsValid)
+        if (!_authService.IsLoggedIn)
         {
-            _logger.LogWarning("JIRA is not configured or disabled");
+            _logger.LogWarning("JIRA user is not logged in");
             return false;
         }
 
@@ -137,11 +150,17 @@ public class JiraService : IJiraService
 
         try
         {
+            var jiraClient = CreateJiraClient();
+            if (jiraClient == null)
+            {
+                return false;
+            }
+
             _logger.LogInformation(
                 "Adding worklog to {IssueKey}: {Seconds}s on company {Company}",
                 worklog.IssueKey,
                 worklog.TimeSpentSeconds,
-                _configuration.Company);
+                _authService.CurrentCompany);
 
             var worklogRequest = new Worklog
             {
@@ -150,7 +169,7 @@ public class JiraService : IJiraService
                 Comment = worklog.Comment
             };
 
-            await _jiraClient.Rest.Api.Two.Issue[worklog.IssueKey].Worklog.PostAsync(worklogRequest);
+            await jiraClient.Rest.Api.Two.Issue[worklog.IssueKey].Worklog.PostAsync(worklogRequest);
 
             _logger.LogInformation("Worklog added successfully to {IssueKey}", worklog.IssueKey);
 
@@ -160,6 +179,34 @@ public class JiraService : IJiraService
         {
             _logger.LogError(ex, "Error adding worklog to {IssueKey}", worklog.IssueKey);
             return false;
+        }
+    }
+
+    private JiraRestClient? CreateJiraClient()
+    {
+        try
+        {
+            var credentials = _credentialService.LoadCredentials("FocusTray_Jira");
+            if (credentials == null)
+            {
+                _logger.LogWarning("Cannot create JIRA client: credentials not found");
+                return null;
+            }
+
+            var company = _authService.CurrentCompany;
+            if (string.IsNullOrWhiteSpace(company))
+            {
+                _logger.LogWarning("Cannot create JIRA client: company not configured");
+                return null;
+            }
+
+            var basicAuthProvider = new BasicAuthProvider(credentials.Value.Username, credentials.Value.Password);
+            return JiraRestClient.Create(company, basicAuthProvider, _httpClient);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating JIRA client");
+            return null;
         }
     }
 }

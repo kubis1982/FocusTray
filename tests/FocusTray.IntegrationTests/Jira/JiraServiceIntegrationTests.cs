@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using FocusTray.Core.Models;
+using FocusTray.Core.Services;
 using FocusTray.Infrastructure.Jira;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -25,7 +26,7 @@ public class JiraServiceIntegrationTests : IDisposable
     public JiraServiceIntegrationTests()
     {
         _httpClient = new HttpClient();
-        
+
         var company = Environment.GetEnvironmentVariable("JIRA_BASE_URL");
         var email = Environment.GetEnvironmentVariable("JIRA_EMAIL");
         var apiToken = Environment.GetEnvironmentVariable("JIRA_API_TOKEN");
@@ -42,19 +43,25 @@ public class JiraServiceIntegrationTests : IDisposable
         _isConfigured = true;
         _skipReason = string.Empty;
 
+        // Create simple test implementations
+        var authService = new TestJiraAuthService(company, email, apiToken);
+        var credentialService = new TestCredentialService(email, apiToken);
+
         var configuration = new JiraConfiguration
         {
-            Enabled = true,
             Company = company,
-            Email = email,
-            ApiToken = apiToken,
             JqlFilter = "assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC"
         };
 
         var logger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Warning))
             .CreateLogger<JiraService>();
 
-        _jiraService = new JiraService(_httpClient, configuration, logger);
+        _jiraService = new JiraService(
+            authService,
+            credentialService,
+            configuration,
+            _httpClient,
+            logger);
     }
 
     [SkippableFact]
@@ -151,5 +158,48 @@ public class JiraServiceIntegrationTests : IDisposable
     public void Dispose()
     {
         _httpClient?.Dispose();
+    }
+
+    // Test helper classes
+    private class TestJiraAuthService : IJiraAuthService
+    {
+        private readonly string _company;
+        private readonly string _email;
+        private readonly string _apiToken;
+
+        public TestJiraAuthService(string company, string email, string apiToken)
+        {
+            _company = company;
+            _email = email;
+            _apiToken = apiToken;
+        }
+
+        public bool IsLoggedIn => true;
+        public string? CurrentUsername => _email;
+        public string? CurrentUserEmail => _email;
+        public string? CurrentCompany => _company;
+        public event EventHandler<AuthStateChangedEventArgs>? AuthStateChanged;
+
+        public Task<bool> LoginAsync(string company, string email, string apiToken) => Task.FromResult(true);
+        public Task<bool> LogoutAsync() => Task.FromResult(true);
+        public Task<string?> GetCurrentUserAsync() => Task.FromResult<string?>(_email);
+        public Task<bool> TryAutoLoginAsync() => Task.FromResult(true);
+    }
+
+    private class TestCredentialService : ICredentialService
+    {
+        private readonly string _email;
+        private readonly string _apiToken;
+
+        public TestCredentialService(string email, string apiToken)
+        {
+            _email = email;
+            _apiToken = apiToken;
+        }
+
+        public bool SaveCredentials(string target, string username, string password) => true;
+        public (string Username, string Password)? LoadCredentials(string target) => (_email, _apiToken);
+        public bool DeleteCredentials(string target) => true;
+        public bool HasStoredCredentials(string target) => true;
     }
 }
