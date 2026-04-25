@@ -161,44 +161,24 @@ public class JiraServiceIntegrationTests : IDisposable
     }
 
     // Test helper classes
-    private class TestJiraAuthService : IJiraAuthService
+    private class TestJiraAuthService(string company, string email, string apiToken) : IJiraAuthService
     {
-        private readonly string _company;
-        private readonly string _email;
-        private readonly string _apiToken;
-
-        public TestJiraAuthService(string company, string email, string apiToken)
-        {
-            _company = company;
-            _email = email;
-            _apiToken = apiToken;
-        }
-
         public bool IsLoggedIn => true;
-        public string? CurrentUsername => _email;
-        public string? CurrentUserEmail => _email;
-        public string? CurrentCompany => _company;
+        public string? CurrentUsername => email;
+        public string? CurrentUserEmail => email;
+        public string? CurrentCompany => company;
         public event EventHandler<AuthStateChangedEventArgs>? AuthStateChanged;
 
         public Task<bool> LoginAsync(string company, string email, string apiToken) => Task.FromResult(true);
         public Task<bool> LogoutAsync() => Task.FromResult(true);
-        public Task<string?> GetCurrentUserAsync() => Task.FromResult<string?>(_email);
+        public Task<string?> GetCurrentUserAsync() => Task.FromResult<string?>(email);
         public Task<bool> TryAutoLoginAsync() => Task.FromResult(true);
     }
 
-    private class TestCredentialService : ICredentialService
+    private class TestCredentialService(string email, string apiToken) : ICredentialService
     {
-        private readonly string _email;
-        private readonly string _apiToken;
-
-        public TestCredentialService(string email, string apiToken)
-        {
-            _email = email;
-            _apiToken = apiToken;
-        }
-
         public bool SaveCredentials(string target, string username, string password) => true;
-        public (string Username, string Password)? LoadCredentials(string target) => (_email, _apiToken);
+        public (string Username, string Password)? LoadCredentials(string target) => (email, apiToken);
         public bool DeleteCredentials(string target) => true;
         public bool HasStoredCredentials(string target) => true;
     }

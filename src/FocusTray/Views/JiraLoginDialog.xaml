@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="Login to JIRA" 
-        Height="400" 
+        Height="Auto" 
+        SizeToContent="Height"
         Width="500"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize">
@@ -18,7 +19,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
@@ -35,7 +36,6 @@
                    Margin="0,0,0,5"/>
         <TextBox Grid.Row="2" 
                  Name="CompanyTextBox"
-                 Height="30" 
                  Margin="0,0,0,15"
                  ToolTip="Enter your company name (e.g., 'mycompany' for mycompany.atlassian.net)"/>
 
@@ -45,7 +45,6 @@
                    Margin="0,0,0,5"/>
         <TextBox Grid.Row="4" 
                  Name="EmailTextBox"
-                 Height="30" 
                  Margin="0,0,0,15"
                  ToolTip="Your Atlassian account email"/>
 
@@ -55,13 +54,12 @@
                    Margin="0,0,0,5"/>
         <PasswordBox Grid.Row="6" 
                      Name="ApiTokenPasswordBox"
-                     Height="30" 
                      Margin="0,0,0,10"
                      ToolTip="Your JIRA API token"/>
 
         <!-- Help Link -->
         <StackPanel Grid.Row="7" 
-                    Orientation="Horizontal" 
+                    Orientation="Vertical" 
                     Margin="0,0,0,15">
             <TextBlock Text="Don't have an API token? " 
                        VerticalAlignment="Center"/>
