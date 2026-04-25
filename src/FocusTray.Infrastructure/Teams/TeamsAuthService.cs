@@ -16,6 +16,7 @@ public class TeamsAuthService : ITeamsAuthService
     private readonly ICredentialService _credentialService;
     private readonly ILogger<TeamsAuthService> _logger;
     private readonly IPublicClientApplication _msalClient;
+    private readonly MsalTokenCacheHelper _tokenCacheHelper;
     
     private string? _currentUsername;
     private string? _currentUserEmail;
@@ -30,12 +31,18 @@ public class TeamsAuthService : ITeamsAuthService
         _credentialService = credentialService ?? throw new ArgumentNullException(nameof(credentialService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         
-        // Initialize MSAL PublicClientApplication
+        // Initialize token cache helper
+        _tokenCacheHelper = new MsalTokenCacheHelper(logger);
+        
+        // Initialize MSAL PublicClientApplication with persistent cache
         _msalClient = PublicClientApplicationBuilder
             .Create(TeamsConfiguration.ClientId)
             .WithAuthority($"https://login.microsoftonline.com/{TeamsConfiguration.TenantId}")
             .WithRedirectUri(TeamsConfiguration.RedirectUri)
             .Build();
+        
+        // Enable persistent token cache
+        _tokenCacheHelper.EnableSerialization(_msalClient.UserTokenCache);
     }
 
     public bool IsLoggedIn => _isLoggedIn;
@@ -132,6 +139,9 @@ public class TeamsAuthService : ITeamsAuthService
             {
                 _logger.LogWarning("Failed to delete credentials (may not exist)");
             }
+
+            // Clear persistent token cache
+            _tokenCacheHelper.Clear();
 
             // Clear state
             _currentUsername = null;
