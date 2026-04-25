@@ -11,8 +11,6 @@ public class TimerService : ITimerService, IDisposable
 {
     private readonly Timer _timer;
     private FocusSession? _currentSession;
-    private DateTime _pausedAt;
-    private TimeSpan _pausedTimeRemaining;
     private bool _disposed;
 
     public FocusSession? CurrentSession => _currentSession;
@@ -40,65 +38,32 @@ public class TimerService : ITimerService, IDisposable
         if (duration > TimeSpan.FromHours(24))
             throw new ArgumentException("Duration cannot exceed 24 hours.", nameof(duration));
 
-        if (_currentSession?.State == TimerState.Running || _currentSession?.State == TimerState.Paused)
-            throw new InvalidOperationException("A session is already active. Stop or complete the current session first.");
+        if (_currentSession?.State == TimerState.Running)
+            throw new InvalidOperationException("A session is already active. Complete the current session first.");
 
-        _currentSession = new FocusSession
-        {
-            TaskDescription = taskDescription,
-            Duration = duration,
-            StartTime = DateTime.UtcNow,
-            State = TimerState.Running
-        };
+        _currentSession = FocusSession.Create(taskDescription, duration, DateTime.UtcNow);
 
         _timer.Start();
+
         OnStateChanged(TimerState.Running);
         
         return true;
     }
 
-    public bool PauseSession()
-    {
-        if (_currentSession == null || _currentSession.State != TimerState.Running)
-            return false;
-
-        _pausedAt = DateTime.UtcNow;
-        _pausedTimeRemaining = _currentSession.TimeRemaining;
-        _currentSession.State = TimerState.Paused;
-        _timer.Stop();
-        
-        OnStateChanged(TimerState.Paused);
-        
-        return true;
-    }
-
-    public bool ResumeSession()
-    {
-        if (_currentSession == null || _currentSession.State != TimerState.Paused)
-            return false;
-
-        // Adjust start time to account for paused duration
-        var pausedDuration = DateTime.UtcNow - _pausedAt;
-        _currentSession.StartTime = _currentSession.StartTime.Add(pausedDuration);
-        _currentSession.State = TimerState.Running;
-        
-        _timer.Start();
-        OnStateChanged(TimerState.Running);
-        
-        return true;
-    }
-
-    public bool StopSession()
+    public bool CompleteSession()
     {
         if (_currentSession == null)
             return false;
 
         _timer.Stop();
-        _currentSession.State = TimerState.Idle;
-        
-        OnStateChanged(TimerState.Idle);
+
+        _currentSession.Stop(DateTime.UtcNow);
+
+        OnStateChanged(TimerState.Completed);
+        OnSessionCompleted(_currentSession);
+
         _currentSession = null;
-        
+
         return true;
     }
 
@@ -125,7 +90,7 @@ public class TimerService : ITimerService, IDisposable
             return;
 
         var timeRemaining = _currentSession.TimeRemaining;
-        
+
         Tick?.Invoke(this, timeRemaining);
 
         if (timeRemaining <= TimeSpan.Zero)
@@ -134,21 +99,14 @@ public class TimerService : ITimerService, IDisposable
         }
     }
 
-    private void CompleteSession()
-    {
-        if (_currentSession == null)
-            return;
-
-        _timer.Stop();
-        _currentSession.State = TimerState.Completed;
-        
-        OnStateChanged(TimerState.Completed);
-        SessionCompleted?.Invoke(this, _currentSession);
-    }
-
     private void OnStateChanged(TimerState newState)
     {
         StateChanged?.Invoke(this, newState);
+    }
+
+    private void OnSessionCompleted(FocusSession session)
+    {
+        SessionCompleted?.Invoke(this, session);
     }
 
     public void Dispose()

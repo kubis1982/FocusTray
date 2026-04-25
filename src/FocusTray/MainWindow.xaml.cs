@@ -112,7 +112,8 @@ public partial class MainWindow : Window
             if (result == MessageBoxResult.Yes)
             {
                 var session = _timerService.CurrentSession;
-                _timerService.StopSession();
+
+                _timerService.CompleteSession();
 
                 // Prompt for worklog if JIRA issue was selected
                 if (session != null)
@@ -344,7 +345,7 @@ public partial class MainWindow : Window
             // Round to nearest second to avoid rounding issues (e.g., 60.0 becoming 61)
             var timeSpent = (int)Math.Round(session.TimeElapsed.TotalSeconds);
             var issueKey = _currentSessionJiraIssueKey;
-            
+
             var result = MessageBox.Show(
                 this,
                 $"Would you like to log {FormatTime(session.TimeElapsed)} of work to JIRA issue {issueKey}?",

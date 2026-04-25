@@ -235,7 +235,7 @@ public class SessionConfigDialogViewModelTests
         var viewModel = new SessionConfigDialogViewModel(_mockJiraService.Object, _mockAuthService.Object);
 
         // Wait for async loading to complete
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
 
         // Assert - issues should be loaded automatically
         viewModel.JiraIssues.Should().HaveCount(1);
