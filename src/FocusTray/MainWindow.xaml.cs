@@ -16,17 +16,26 @@ public partial class MainWindow : Window
     private readonly ITimerService _timerService = default!;
     private readonly IJiraService _jiraService = default!;
     private readonly IJiraAuthService _authService = default!;
+    private readonly ITeamsAuthService _teamsAuthService = default!;
+    private readonly ITeamsPresenceService _teamsPresenceService = default!;
     private DispatcherTimer _uiUpdateTimer = default!;
     private SoundPlayer _notificationSound = default!;
     private string? _currentSessionJiraIssueKey;
 
-    public MainWindow(ITimerService timerService, IJiraService jiraService, IJiraAuthService authService)
+    public MainWindow(
+        ITimerService timerService, 
+        IJiraService jiraService, 
+        IJiraAuthService authService, 
+        ITeamsAuthService teamsAuthService,
+        ITeamsPresenceService teamsPresenceService)
     {
         InitializeComponent();
 
         _timerService = timerService;
         _jiraService = jiraService;
         _authService = authService;
+        _teamsAuthService = teamsAuthService;
+        _teamsPresenceService = teamsPresenceService;
 
         InitializeWindow();
     }
@@ -50,9 +59,11 @@ public partial class MainWindow : Window
 
         // Subscribe to auth state changes
         _authService.AuthStateChanged += AuthService_AuthStateChanged;
+        _teamsAuthService.AuthStateChanged += TeamsAuthService_AuthStateChanged;
 
-        // Update JIRA menu state on initialization
+        // Update menu states on initialization
         UpdateJiraMenuState();
+        UpdateTeamsMenuState();
 
         // Hide window on startup
         WindowState = WindowState.Minimized;
@@ -114,6 +125,9 @@ public partial class MainWindow : Window
                 var session = _timerService.CurrentSession;
 
                 _timerService.CompleteSession();
+                
+                // Clear Teams status asynchronously (non-blocking)
+                _ = ClearTeamsStatusAsync();
 
                 // Prompt for worklog if JIRA issue was selected
                 if (session != null)
@@ -191,6 +205,14 @@ public partial class MainWindow : Window
         });
     }
 
+    private void TeamsAuthService_AuthStateChanged(object? sender, TeamsAuthStateChangedEventArgs e)
+    {
+        Dispatcher.InvokeAsync(() =>
+        {
+            UpdateTeamsMenuState();
+        });
+    }
+
     private void UpdateJiraMenuState()
     {
         var isLoggedIn = _authService.IsLoggedIn;
@@ -209,6 +231,76 @@ public partial class MainWindow : Window
         else
         {
             JiraStatusSubMenuItem.Header = "Logged in as: username";
+        }
+    }
+
+    private void UpdateTeamsMenuState()
+    {
+        var isLoggedIn = _teamsAuthService.IsLoggedIn;
+
+        // Update visibility of submenu items based on login state
+        TeamsLoginSubMenuItem.Visibility = isLoggedIn ? Visibility.Collapsed : Visibility.Visible;
+        TeamsStatusSubMenuItem.Visibility = isLoggedIn ? Visibility.Visible : Visibility.Collapsed;
+        TeamsSettingsSubMenuItem.Visibility = isLoggedIn ? Visibility.Visible : Visibility.Collapsed;
+        TeamsLogoutSubMenuItem.Visibility = isLoggedIn ? Visibility.Visible : Visibility.Collapsed;
+
+        // Update status text
+        if (isLoggedIn && !string.IsNullOrWhiteSpace(_teamsAuthService.CurrentUsername))
+        {
+            TeamsStatusSubMenuItem.Header = $"Signed in as: {_teamsAuthService.CurrentUsername}";
+        }
+        else
+        {
+            TeamsStatusSubMenuItem.Header = "Signed in as: username";
+        }
+    }
+
+    private void TeamsLogin_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var loginDialog = App.Services.GetRequiredService<Views.TeamsLoginDialog>();
+            loginDialog.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            ShowErrorNotification("FocusTray Error", $"Error opening Teams login: {ex.Message}");
+        }
+    }
+
+    private async void TeamsLogout_Click(object sender, RoutedEventArgs e)
+    {
+        var result = MessageBox.Show(
+            this,
+            "Are you sure you want to sign out from Microsoft Teams?",
+            "Sign Out from Teams",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (result == MessageBoxResult.Yes)
+        {
+            try
+            {
+                await _teamsAuthService.LogoutAsync();
+                ShowInfoNotification("Teams Sign Out", "Successfully signed out from Microsoft Teams");
+            }
+            catch (Exception ex)
+            {
+                ShowErrorNotification("FocusTray Error", $"Error during sign out: {ex.Message}");
+            }
+        }
+    }
+
+    private void TeamsSettings_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var settingsDialog = App.Services.GetRequiredService<Views.TeamsSettingsDialog>();
+            settingsDialog.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            ShowErrorNotification("FocusTray Error", $"Error opening Teams settings: {ex.Message}");
         }
     }
 
@@ -235,6 +327,9 @@ public partial class MainWindow : Window
             {
                 // Log warning but continue execution
             }
+
+            // Clear Teams status asynchronously (non-blocking)
+            _ = ClearTeamsStatusAsync();
 
             // Show completion notification
             ShowSessionCompletedNotification(session);
@@ -401,6 +496,31 @@ public partial class MainWindow : Window
         return $"{time.Minutes:D2}:{time.Seconds:D2}";
     }
 
+    private async Task ClearTeamsStatusAsync()
+    {
+        if (!_teamsPresenceService.IsEnabled)
+        {
+            // Teams not logged in, skip
+            return;
+        }
+
+        try
+        {
+            var success = await _teamsPresenceService.ClearStatusAsync();
+            
+            if (!success)
+            {
+                // Show non-blocking notification
+                ShowInfoNotification("Teams Status", "Could not clear Teams status automatically.");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log error but don't interrupt
+            ShowErrorNotification("Teams Status Error", ex.Message);
+        }
+    }
+
     protected override void OnClosed(EventArgs e)
     {
         _uiUpdateTimer?.Stop();
@@ -410,6 +530,7 @@ public partial class MainWindow : Window
         _timerService.StateChanged -= TimerService_StateChanged;
         
         _authService.AuthStateChanged -= AuthService_AuthStateChanged;
+        _teamsAuthService.AuthStateChanged -= TeamsAuthService_AuthStateChanged;
 
         TrayIcon?.Dispose();
         _notificationSound?.Dispose();

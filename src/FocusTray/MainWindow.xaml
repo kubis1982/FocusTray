@@ -50,6 +50,25 @@
                                   Click="JiraLogout_Click"
                                   Visibility="Collapsed"/>
                     </MenuItem>
+                    <!-- Teams Submenu -->
+                    <MenuItem Header="Microsoft Teams" 
+                              x:Name="TeamsMenuItem">
+                        <MenuItem Header="Sign in to Teams" 
+                                  x:Name="TeamsLoginSubMenuItem"
+                                  Click="TeamsLogin_Click"/>
+                        <MenuItem Header="Signed in as: username" 
+                                  x:Name="TeamsStatusSubMenuItem"
+                                  IsEnabled="False"
+                                  Visibility="Collapsed"/>
+                        <MenuItem Header="Settings..." 
+                                  x:Name="TeamsSettingsSubMenuItem"
+                                  Click="TeamsSettings_Click"
+                                  Visibility="Collapsed"/>
+                        <MenuItem Header="Sign Out" 
+                                  x:Name="TeamsLogoutSubMenuItem"
+                                  Click="TeamsLogout_Click"
+                                  Visibility="Collapsed"/>
+                    </MenuItem>
                     <Separator/>
                     <MenuItem Header="Exit" 
                               Click="Exit_Click"/>
