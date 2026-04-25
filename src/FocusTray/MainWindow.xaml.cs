@@ -102,20 +102,24 @@ public partial class MainWindow : Window
     {
         if (_timerService.IsRunning == true)
         {
-            var result = System.Windows.MessageBox.Show("Are you sure you want to end the current focus session?", 
-                "FocusTray", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Question);
+            var result = MessageBox.Show(
+                this,
+                "Are you sure you want to end the current focus session?", 
+                "FocusTray", 
+                MessageBoxButton.YesNo, 
+                MessageBoxImage.Question);
 
-            if (result == System.Windows.MessageBoxResult.Yes)
+            if (result == MessageBoxResult.Yes)
             {
                 var session = _timerService.CurrentSession;
                 _timerService.StopSession();
-                
+
                 // Prompt for worklog if JIRA issue was selected
                 if (session != null)
                 {
                     PromptForWorklog(session);
                 }
-                
+
                 UpdateTrayMenuState();
                 UpdateTrayIcon(false);
                 _uiUpdateTimer?.Stop();
@@ -145,6 +149,7 @@ public partial class MainWindow : Window
     private async void JiraLogout_Click(object sender, RoutedEventArgs e)
     {
         var result = MessageBox.Show(
+            this,
             "Are you sure you want to logout from JIRA? Your credentials will be removed.",
             "Logout from JIRA",
             MessageBoxButton.YesNo,
@@ -341,6 +346,7 @@ public partial class MainWindow : Window
             var issueKey = _currentSessionJiraIssueKey;
             
             var result = MessageBox.Show(
+                this,
                 $"Would you like to log {FormatTime(session.TimeElapsed)} of work to JIRA issue {issueKey}?",
                 "Log Work to JIRA",
                 MessageBoxButton.YesNo,

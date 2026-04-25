@@ -3,20 +3,19 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:converters="clr-namespace:FocusTray.Converters"
         Title="Start Focus Session" 
-        MinHeight="280" MinWidth="400" 
-        Height="Auto" Width="450"
+        Height="320" Width="450"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         ShowInTaskbar="False"
         SizeToContent="Height">
-    
+
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
         <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
         <converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
     </Window.Resources>
-    
+
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -24,7 +23,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
@@ -36,7 +35,7 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            
+
             <ComboBox x:Name="JiraIssuesComboBox"
                       Grid.Column="0"
                       ItemsSource="{Binding JiraIssues}"
@@ -44,13 +43,11 @@
                       DisplayMemberPath="DisplayText"
                       IsEnabled="{Binding IsLoadingIssues, Converter={StaticResource InverseBoolConverter}}"
                       Margin="0,0,10,0"/>
-            
+
             <Button Grid.Column="1"
                     Content="↻"
-                    Width="30"
-                    Height="30"
                     Command="{Binding LoadJiraIssuesCommand}"
-                    ToolTip="Refresh JIRA issues"/>
+                    ToolTip="Refresh JIRA issues" HorizontalAlignment="Center" Height="36" />
         </Grid>
 
         <TextBlock Grid.Row="1" 
@@ -66,12 +63,11 @@
                    FontWeight="Bold" 
                    Margin="0,0,0,5"
                    Visibility="{Binding IsJiraEnabled, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
-        
+
         <TextBox x:Name="TaskDescriptionTextBox" 
                  Grid.Row="3" 
                  Text="{Binding TaskDescription, UpdateSourceTrigger=PropertyChanged}"
                  Margin="0,0,0,15" 
-                 Padding="5"
                  MaxLength="100"
                  Visibility="{Binding IsJiraEnabled, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
 
@@ -80,12 +76,11 @@
                    Text="Duration (minutes)" 
                    FontWeight="Bold" 
                    Margin="0,0,0,5"/>
-        
+
         <TextBox x:Name="DurationTextBox" 
                  Grid.Row="5" 
                  Text="{Binding DurationMinutes, UpdateSourceTrigger=PropertyChanged}"
                  Margin="0,0,0,15" 
-                 Padding="5"
                  MaxLength="4"/>
 
         <!-- Buttons -->
