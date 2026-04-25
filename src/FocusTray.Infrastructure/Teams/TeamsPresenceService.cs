@@ -125,11 +125,9 @@ public class TeamsPresenceService : ITeamsPresenceService
                 {
                     Message = new ItemBody
                     {
-                        Content = "", // Pusta treść usuwa status
+                        Content = "",
                         ContentType = BodyType.Text
                     },
-                    // Opcjonalnie: możesz ustawić datę wygaśnięcia na teraz, 
-                    // ale pusty Content jest najbardziej niezawodny.
                     ExpiryDateTime = null
                 }
             };
