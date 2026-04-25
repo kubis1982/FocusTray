@@ -119,8 +119,24 @@ public class TeamsPresenceService : ITeamsPresenceService
                 return false;
             }
 
+            var statusRequest = new SetStatusMessagePostRequestBody
+            {
+                StatusMessage = new PresenceStatusMessage
+                {
+                    Message = new ItemBody
+                    {
+                        Content = "", // Pusta treść usuwa status
+                        ContentType = BodyType.Text
+                    },
+                    // Opcjonalnie: możesz ustawić datę wygaśnięcia na teraz, 
+                    // ale pusty Content jest najbardziej niezawodny.
+                    ExpiryDateTime = null
+                }
+            };
+
             // Clear user preferred presence (returns to automatic status)
             await graphClient.Me.Presence.ClearUserPreferredPresence.PostAsync();
+            await graphClient.Me.Presence.SetStatusMessage.PostAsync(statusRequest);
             _logger.LogInformation("Teams status cleared successfully");
 
             return true;
