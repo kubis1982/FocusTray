@@ -1,4 +1,5 @@
 using FocusTray.Core.Services;
+using FocusTray.Infrastructure.Credentials;
 using FocusTray.Infrastructure.Jira;
 using FocusTray.Services;
 using FocusTray.ViewModels;
@@ -32,24 +33,33 @@ public partial class App : Application
 
         // Add core services
         services.AddSingleton<ITimerService, TimerService>();
+        
+        // Add credential service
+        services.AddSingleton<ICredentialService, WindowsCredentialService>();
 
-        // Add JIRA integration
+        // Add JIRA configuration (shared singleton)
+        services.AddSingleton<JiraConfiguration>(provider =>
+        {
+            var settingsService = provider.GetRequiredService<SettingsService>();
+            return settingsService.JiraConfiguration;
+        });
+        
+        // Add JIRA authentication service
+        services.AddSingleton<IJiraAuthService, JiraAuthService>();
+
+        // Add JIRA integration with HttpClient
         services.AddHttpClient<IJiraService, JiraService>()
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
             {
                 AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
             });
 
-        services.AddSingleton<JiraConfiguration>(provider =>
-        {
-            var settingsService = provider.GetRequiredService<SettingsService>();
-            return settingsService.JiraConfiguration;
-        });
-
         // Add dialogs
+        services.AddTransient<JiraLoginDialogViewModel>();
+        services.AddTransient<Views.JiraLoginDialog>();
+        services.AddTransient<Views.JiraAdvancedSettingsDialog>();
         services.AddTransient<SessionConfigDialogViewModel>();
         services.AddTransient<SessionConfigDialog>();
-        services.AddTransient<Views.JiraSettingsDialog>();
         services.AddTransient<MainWindow>();
 
         _serviceProvider = services.BuildServiceProvider();
@@ -59,7 +69,24 @@ public partial class App : Application
         MainWindow = mainWindow;
         mainWindow.Show();
 
+        // Try auto-login to JIRA in background (non-blocking)
+        _ = TryAutoLoginAsync();
+
         base.OnStartup(e);
+    }
+
+    private async Task TryAutoLoginAsync()
+    {
+        try
+        {
+            var authService = _serviceProvider!.GetRequiredService<IJiraAuthService>();
+            await authService.TryAutoLoginAsync();
+        }
+        catch (Exception ex)
+        {
+            // Log error but don't show to user
+            Log.Warning(ex, "Auto-login to JIRA failed");
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)

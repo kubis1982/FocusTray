@@ -10,12 +10,14 @@ namespace FocusTray.Tests.ViewModels;
 public class SessionConfigDialogViewModelTests
 {
     private readonly Mock<IJiraService> _mockJiraService;
+    private readonly Mock<IJiraAuthService> _mockAuthService;
     private readonly SessionConfigDialogViewModel _viewModel;
 
     public SessionConfigDialogViewModelTests()
     {
         _mockJiraService = new Mock<IJiraService>();
-        _viewModel = new SessionConfigDialogViewModel(_mockJiraService.Object);
+        _mockAuthService = new Mock<IJiraAuthService>();
+        _viewModel = new SessionConfigDialogViewModel(_mockJiraService.Object, _mockAuthService.Object);
     }
 
     [Fact]
@@ -24,7 +26,6 @@ public class SessionConfigDialogViewModelTests
         // Assert
         _viewModel.DurationMinutes.Should().Be(25);
         _viewModel.TaskDescription.Should().BeEmpty();
-        _viewModel.UseJiraIssue.Should().BeFalse();
         _viewModel.SelectedIssue.Should().BeNull();
         _viewModel.JiraIssues.Should().BeEmpty();
     }
@@ -52,6 +53,7 @@ public class SessionConfigDialogViewModelTests
             new() { Key = "PROJ-2", Summary = "Second issue", Status = "To Do" }
         };
         _mockJiraService.Setup(x => x.IsEnabled).Returns(true);
+        _mockAuthService.Setup(x => x.IsLoggedIn).Returns(true);
         _mockJiraService.Setup(x => x.GetAssignedIssuesAsync())
             .ReturnsAsync(issues);
 
@@ -69,6 +71,7 @@ public class SessionConfigDialogViewModelTests
     {
         // Arrange
         _mockJiraService.Setup(x => x.IsEnabled).Returns(true);
+        _mockAuthService.Setup(x => x.IsLoggedIn).Returns(true);
         _mockJiraService.Setup(x => x.GetAssignedIssuesAsync())
             .ThrowsAsync(new HttpRequestException("Network error"));
 
@@ -81,12 +84,12 @@ public class SessionConfigDialogViewModelTests
     }
 
     [Fact]
-    public void Should_ReturnJiraIssueKey_When_IssueIsSelected()
+    public void Should_ReturnJiraIssueKey_When_IssueIsSelectedAndLoggedIn()
     {
         // Arrange
         var issue = new JiraIssue { Key = "PROJ-123", Summary = "Test issue", Status = "In Progress" };
+        _mockAuthService.Setup(x => x.IsLoggedIn).Returns(true);
         _viewModel.SelectedIssue = issue;
-        _viewModel.UseJiraIssue = true;
 
         // Act
         var issueKey = _viewModel.GetSelectedIssueKey();
@@ -96,10 +99,10 @@ public class SessionConfigDialogViewModelTests
     }
 
     [Fact]
-    public void Should_ReturnNull_When_NoIssueIsSelected()
+    public void Should_ReturnNull_When_NotLoggedIn()
     {
         // Arrange
-        _viewModel.UseJiraIssue = false;
+        _mockAuthService.Setup(x => x.IsLoggedIn).Returns(false);
 
         // Act
         var issueKey = _viewModel.GetSelectedIssueKey();
@@ -109,12 +112,12 @@ public class SessionConfigDialogViewModelTests
     }
 
     [Fact]
-    public void Should_ReturnJiraDescription_When_IssueIsSelected()
+    public void Should_ReturnJiraDescription_When_IssueIsSelectedAndLoggedIn()
     {
         // Arrange
         var issue = new JiraIssue { Key = "PROJ-123", Summary = "Implement feature X", Status = "In Progress" };
+        _mockAuthService.Setup(x => x.IsLoggedIn).Returns(true);
         _viewModel.SelectedIssue = issue;
-        _viewModel.UseJiraIssue = true;
 
         // Act
         var description = _viewModel.GetEffectiveTaskDescription();
@@ -139,10 +142,10 @@ public class SessionConfigDialogViewModelTests
     }
 
     [Fact]
-    public void Should_ReturnError_When_JiraIssueSelectedButNull()
+    public void Should_ReturnError_When_LoggedInButNoIssueSelected()
     {
         // Arrange
-        _viewModel.UseJiraIssue = true;
+        _mockAuthService.Setup(x => x.IsLoggedIn).Returns(true);
         _viewModel.SelectedIssue = null;
 
         // Act
@@ -154,10 +157,10 @@ public class SessionConfigDialogViewModelTests
     }
 
     [Fact]
-    public void Should_ReturnError_When_NoDescriptionProvided()
+    public void Should_ReturnError_When_NotLoggedInAndNoDescriptionProvided()
     {
         // Arrange
-        _viewModel.UseJiraIssue = false;
+        _mockAuthService.Setup(x => x.IsLoggedIn).Returns(false);
         _viewModel.TaskDescription = "";
 
         // Act
@@ -214,41 +217,27 @@ public class SessionConfigDialogViewModelTests
     }
 
     [Fact]
-    public void Should_ClearManualDescription_When_SwitchingToJiraIssue()
-    {
-        // Arrange
-        _viewModel.TaskDescription = "Manual task";
-        _viewModel.UseJiraIssue = false;
-
-        // Act
-        _viewModel.UseJiraIssue = true;
-
-        // Assert
-        _viewModel.TaskDescription.Should().BeEmpty();
-    }
-
-    [Fact]
     public async Task Should_LoadIssuesWhenCheckboxChecked_When_JiraIsEnabled()
     {
+        // This test is no longer relevant - there's no checkbox to check
+        // Issues are loaded automatically in constructor when logged in
         // Arrange
         var issues = new List<JiraIssue>
         {
             new() { Key = "PROJ-1", Summary = "Issue 1", Status = "To Do" }
         };
         _mockJiraService.Setup(x => x.IsEnabled).Returns(true);
+        _mockAuthService.Setup(x => x.IsLoggedIn).Returns(true);
         _mockJiraService.Setup(x => x.GetAssignedIssuesAsync())
             .ReturnsAsync(issues);
 
-        // Create new ViewModel - should NOT load issues yet
-        var viewModel = new SessionConfigDialogViewModel(_mockJiraService.Object);
+        // Create new ViewModel - should load issues automatically
+        var viewModel = new SessionConfigDialogViewModel(_mockJiraService.Object, _mockAuthService.Object);
 
-        // Act - Enable JIRA issue checkbox to trigger load
-        viewModel.UseJiraIssue = true;
-        
         // Wait for async loading to complete
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
 
-        // Assert - issues should be loaded when checkbox is checked
+        // Assert - issues should be loaded automatically
         viewModel.JiraIssues.Should().HaveCount(1);
         viewModel.JiraIssues[0].Key.Should().Be("PROJ-1");
     }

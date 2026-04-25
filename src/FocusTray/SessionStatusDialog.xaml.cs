@@ -247,10 +247,10 @@ public partial class SessionStatusDialog : Window
     {
         var result = MessageBox.Show("Are you sure you want to end the current focus session?", 
             "End Session", MessageBoxButton.YesNo, MessageBoxImage.Question);
-        
+
         if (result == MessageBoxResult.Yes)
         {
-            _timerService.StopSession();
+            _timerService.CompleteSession();
             MessageBox.Show("Focus session ended.", 
                 "FocusTray", MessageBoxButton.OK, MessageBoxImage.Information);
             Close();

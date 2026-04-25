@@ -102,64 +102,13 @@ public class TimerServiceTests : IDisposable
     }
 
     [Fact]
-    public void Should_PauseSessionSuccessfully_When_SessionIsRunning()
+    public void Should_CompleteSessionSuccessfully_When_SessionIsRunning()
     {
         // Arrange
         _timerService.StartSession("Test Task", TimeSpan.FromMinutes(25));
 
         // Act
-        var result = _timerService.PauseSession();
-
-        // Assert
-        result.Should().BeTrue();
-        _timerService.IsRunning.Should().BeFalse();
-        _timerService.CurrentSession!.State.Should().Be(TimerState.Paused);
-    }
-
-    [Fact]
-    public void Should_ReturnFalse_When_PausingWithNoActiveSession()
-    {
-        // Act
-        var result = _timerService.PauseSession();
-
-        // Assert
-        result.Should().BeFalse();
-    }
-
-    [Fact]
-    public void Should_ResumeSessionSuccessfully_When_SessionIsPaused()
-    {
-        // Arrange
-        _timerService.StartSession("Test Task", TimeSpan.FromMinutes(25));
-        _timerService.PauseSession();
-
-        // Act
-        var result = _timerService.ResumeSession();
-
-        // Assert
-        result.Should().BeTrue();
-        _timerService.IsRunning.Should().BeTrue();
-        _timerService.CurrentSession!.State.Should().Be(TimerState.Running);
-    }
-
-    [Fact]
-    public void Should_ReturnFalse_When_ResumingNonPausedSession()
-    {
-        // Act
-        var result = _timerService.ResumeSession();
-
-        // Assert
-        result.Should().BeFalse();
-    }
-
-    [Fact]
-    public void Should_StopSessionSuccessfully_When_SessionIsRunning()
-    {
-        // Arrange
-        _timerService.StartSession("Test Task", TimeSpan.FromMinutes(25));
-
-        // Act
-        var result = _timerService.StopSession();
+        var result = _timerService.CompleteSession();
 
         // Assert
         result.Should().BeTrue();
@@ -168,10 +117,10 @@ public class TimerServiceTests : IDisposable
     }
 
     [Fact]
-    public void Should_ReturnFalse_When_StoppingWithNoActiveSession()
+    public void Should_ReturnFalse_When_CompletingWithNoActiveSession()
     {
         // Act
-        var result = _timerService.StopSession();
+        var result = _timerService.CompleteSession();
 
         // Assert
         result.Should().BeFalse();
@@ -243,21 +192,6 @@ public class TimerServiceTests : IDisposable
 
         // Assert
         raisedState.Should().Be(TimerState.Running);
-    }
-
-    [Fact]
-    public void Should_RaiseStateChangedEvent_When_SessionPaused()
-    {
-        // Arrange
-        _timerService.StartSession("Test Task", TimeSpan.FromMinutes(25));
-        TimerState? raisedState = null;
-        _timerService.StateChanged += (sender, state) => raisedState = state;
-
-        // Act
-        _timerService.PauseSession();
-
-        // Assert
-        raisedState.Should().Be(TimerState.Paused);
     }
 
     [Fact]

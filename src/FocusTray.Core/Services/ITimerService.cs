@@ -41,25 +41,13 @@ public interface ITimerService
     /// <exception cref="ArgumentException">Thrown when parameters are invalid.</exception>
     /// <exception cref="InvalidOperationException">Thrown when a session is already running.</exception>
     bool StartSession(string taskDescription, TimeSpan duration);
-    
+
     /// <summary>
-    /// Pauses the current session.
+    /// Completes the current session immediately.
     /// </summary>
-    /// <returns>True if paused successfully, false if no session is running.</returns>
-    bool PauseSession();
-    
-    /// <summary>
-    /// Resumes a paused session.
-    /// </summary>
-    /// <returns>True if resumed successfully, false if session is not paused.</returns>
-    bool ResumeSession();
-    
-    /// <summary>
-    /// Stops the current session immediately.
-    /// </summary>
-    /// <returns>True if stopped successfully, false if no session is active.</returns>
-    bool StopSession();
-    
+    /// <returns>True if completed successfully, false if no session is active.</returns>
+    bool CompleteSession();
+
     /// <summary>
     /// Extends the current session by the specified duration.
     /// </summary>

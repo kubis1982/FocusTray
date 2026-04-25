@@ -1,0 +1,81 @@
+<Window x:Class="FocusTray.Views.JiraAdvancedSettingsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="JIRA Advanced Settings" 
+        Height="350" 
+        Width="600"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0" 
+                   Text="JIRA Advanced Settings" 
+                   FontSize="20" 
+                   FontWeight="Bold" 
+                   Margin="0,0,0,20"/>
+
+        <!-- JQL Filter Label -->
+        <TextBlock Grid.Row="1" 
+                   Text="JQL Query Filter:" 
+                   Margin="0,0,0,5"/>
+
+        <!-- JQL Filter TextBox -->
+        <TextBox Grid.Row="2" 
+                 Name="JqlFilterTextBox"
+                 TextWrapping="Wrap"
+                 AcceptsReturn="True"
+                 VerticalScrollBarVisibility="Auto"
+                 Margin="0,0,0,10"
+                 ToolTip="JQL query to fetch your assigned issues"/>
+
+        <!-- Help Text -->
+        <TextBlock Grid.Row="3" 
+                   Text="Default: assignee = currentUser() AND statusCategory != Done" 
+                   Foreground="Gray"
+                   FontSize="11"
+                   Margin="0,0,0,10"/>
+
+        <!-- Status Message -->
+        <TextBlock Grid.Row="4" 
+                   Name="StatusTextBlock"
+                   TextWrapping="Wrap" 
+                   Margin="0,0,0,15"/>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="5" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Right">
+            <Button Name="TestQueryButton" 
+                    Content="Test Query" 
+                    Width="120" 
+                    Height="35" 
+                    Click="TestQuery_Click"
+                    Margin="0,0,10,0"/>
+            <Button Name="SaveButton" 
+                    Content="Save" 
+                    Width="100" 
+                    Height="35" 
+                    Click="Save_Click"
+                    Margin="0,0,10,0"
+                    IsDefault="True"/>
+            <Button Name="CancelButton" 
+                    Content="Cancel" 
+                    Width="100" 
+                    Height="35" 
+                    Click="Cancel_Click"
+                    IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>

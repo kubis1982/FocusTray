@@ -5,10 +5,31 @@ namespace FocusTray.Core.Models;
 /// </summary>
 public class FocusSession
 {
+    public static FocusSession Create(string description, TimeSpan duration, DateTime startTime)
+    {
+        return new FocusSession 
+        {
+            TaskDescription = description,
+            Duration = duration,
+            StartTime = startTime,
+            StopTime = startTime + duration,
+            State = TimerState.Running
+        };
+    }
+
+    public void Stop(DateTime stopTime)
+    {
+        if (State != TimerState.Running)
+            throw new InvalidOperationException("Cannot stop a session that is not running.");
+
+        StopTime = stopTime;
+        State = TimerState.Completed;
+    }
+
     /// <summary>
     /// Gets or sets the description of the task being worked on.
     /// </summary>
-    public string TaskDescription { get; set; } = string.Empty;
+    public string TaskDescription { get; private set; } = string.Empty;
     
     /// <summary>
     /// Gets or sets the planned duration of the focus session.
@@ -18,12 +39,17 @@ public class FocusSession
     /// <summary>
     /// Gets or sets the time when the session was started.
     /// </summary>
-    public DateTime StartTime { get; set; }
-    
+    public DateTime StartTime { get; private set; }
+
+    /// <summary>
+    /// Gets or sets the time at which the session is scheduled to stop.
+    /// </summary>
+    public DateTime StopTime { get; private set; }
+
     /// <summary>
     /// Gets or sets the current state of the timer.
     /// </summary>
-    public TimerState State { get; set; } = TimerState.Idle;
+    public TimerState State { get; private set; } = TimerState.Idle;
     
     /// <summary>
     /// Gets the time remaining in the session.
@@ -41,6 +67,8 @@ public class FocusSession
             return remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero;
         }
     }
+
+
     
     /// <summary>
     /// Gets the time elapsed since the session started.
@@ -51,6 +79,9 @@ public class FocusSession
         {
             if (State == TimerState.Idle)
                 return TimeSpan.Zero;
+
+            if (State == TimerState.Completed)
+                return StopTime - StartTime;
             
             return DateTime.UtcNow - StartTime;
         }
