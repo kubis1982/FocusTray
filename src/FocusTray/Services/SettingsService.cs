@@ -1,4 +1,5 @@
 using FocusTray.Infrastructure.Jira;
+using FocusTray.Infrastructure.Teams;
 using System.IO;
 using System.Text.Json;
 
@@ -81,4 +82,5 @@ public class SettingsService
 public class AppSettings
 {
     public JiraConfiguration Jira { get; set; } = new();
+    public TeamsConfiguration Teams { get; set; } = new();
 }

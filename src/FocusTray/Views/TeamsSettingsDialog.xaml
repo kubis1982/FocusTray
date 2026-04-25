@@ -1,0 +1,94 @@
+<Window x:Class="FocusTray.Views.TeamsSettingsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Microsoft Teams Settings" 
+        Height="Auto" 
+        SizeToContent="Height"
+        Width="500"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0" 
+                   Text="Microsoft Teams Settings" 
+                   FontSize="20" 
+                   FontWeight="Bold" 
+                   Margin="0,0,0,20"/>
+
+        <!-- Connection Status -->
+        <Border Grid.Row="1" 
+                BorderBrush="LightGray" 
+                BorderThickness="1" 
+                Padding="15"
+                Margin="0,0,0,20">
+            <StackPanel>
+                <TextBlock Text="Connection Status:" 
+                           FontWeight="Bold" 
+                           Margin="0,0,0,10"/>
+                
+                <StackPanel Name="LoggedInPanel" 
+                            Visibility="Collapsed">
+                    <TextBlock>
+                        <Run Text="✓ Logged in as: "/>
+                        <Run Name="UsernameRun" FontWeight="Bold"/>
+                    </TextBlock>
+                    <TextBlock Name="EmailText" 
+                               Margin="0,5,0,0" 
+                               Foreground="Gray"
+                               FontSize="11"/>
+                </StackPanel>
+                
+                <TextBlock Name="NotLoggedInPanel" 
+                           Text="✗ Not logged in" 
+                           Foreground="Gray"
+                           Visibility="Visible"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Description -->
+        <TextBlock Grid.Row="2" 
+                   TextWrapping="Wrap"
+                   Foreground="Gray"
+                   FontSize="11"
+                   Margin="0,0,0,20">
+            <Run Text="When logged in, FocusTray will automatically set your Teams status to 'Do Not Disturb' during focus sessions."/>
+        </TextBlock>
+
+        <!-- Status Message -->
+        <TextBlock Grid.Row="3" 
+                   Name="StatusTextBlock"
+                   TextWrapping="Wrap" 
+                   Margin="0,0,0,15"
+                   MinHeight="20"/>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="4" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Right">
+            <Button Name="LogoutButton" 
+                    Content="Sign Out" 
+                    Width="120" 
+                    Height="35" 
+                    Click="Logout_Click"
+                    Margin="0,0,10,0"/>
+            <Button Name="CloseButton" 
+                    Content="Close" 
+                    Width="100" 
+                    Height="35" 
+                    Click="Close_Click"
+                    IsDefault="True"
+                    IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>
