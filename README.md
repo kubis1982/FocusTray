@@ -7,7 +7,7 @@
 
 A minimalist Windows system tray application designed to help you maintain deep focus during work sessions by providing visual feedback and non-intrusive notifications.
 
-![FocusTray Icon](src/FocusTray/Resources/bell-icon.ico)
+![FocusTray Icon](src/FocusTray/Resources/favicon.ico)
 
 ## Overview
 
@@ -15,9 +15,9 @@ FocusTray is a lightweight productivity tool that lives in your Windows system t
 
 ## Key Features
 
-- **🔔 Smart System Tray Integration**: Professional bell icons that change color based on session state
-  - White bell icon when idle
-  - Green bell icon during active focus sessions
+- **🔔 Smart System Tray Integration**: Professional bell icons that change based on session state
+  - Standard bell icon when idle
+  - Bell with slash icon during active focus sessions (indicating "do not disturb")
   
 - **⏱️ Customizable Focus Sessions**: Define your own work intervals
   - Configure task descriptions for each session
@@ -96,7 +96,7 @@ FocusTray can automatically track time in JIRA Atlassian Cloud:
    - Right-click the tray icon
    - Select **"JIRA Settings"**
    - Enter your JIRA details:
-     - Base URL: `https://yourcompany.atlassian.net`
+     - Company Name: Your Atlassian company identifier (e.g., "yourcompany" for yourcompany.atlassian.net)
      - Email: Your Atlassian account email
      - API Token: Paste the token you generated
    - (Optional) Customize JQL filter for issue selection
@@ -123,7 +123,7 @@ Keep this file secure and never commit it to source control.
 4. Set the duration in minutes (default: 25)
 5. Click **"Start"**
 
-The tray icon will turn green, indicating an active focus session.
+The tray icon will change to a "bell with slash" icon, indicating an active focus session.
 
 ### Completing a Session with JIRA
 
@@ -213,9 +213,10 @@ FocusTray/
 - **CommunityToolkit.Mvvm 8.4.2** - MVVM framework with source generators
 - **H.NotifyIcon.Wpf 2.4.1** - System tray icon management
 - **CommunityToolkit.WinUI.Notifications 7.1.2** - Native Windows toast notifications
-- **Microsoft.Graph 5.103.0** - Microsoft Teams integration (future)
+- **WPF-UI 4.2.1** - Modern UI controls for WPF
+- **Microsoft.Extensions.*** - Dependency injection, logging, HTTP client, and options
 - **System.Net.Http.Json** - JSON serialization for REST APIs
-- **Serilog** - Structured logging
+- **Serilog** - Structured logging with file sink
 - **xUnit v3** - Unit testing framework
 - **AwesomeAssertions** - Fluent assertion library
 - **Moq 4.20.72** - Mocking framework for tests
@@ -244,7 +245,7 @@ dotnet test tests/FocusTray.Tests/FocusTray.Tests.csproj
 
 # Run integration tests (requires JIRA credentials)
 # Set environment variables first:
-# $env:JIRA_BASE_URL = "https://yourcompany.atlassian.net"
+# $env:JIRA_COMPANY = "yourcompany"  # Company name (e.g., for yourcompany.atlassian.net)
 # $env:JIRA_EMAIL = "your.email@company.com"
 # $env:JIRA_API_TOKEN = "your-api-token"
 dotnet test tests/FocusTray.IntegrationTests/FocusTray.IntegrationTests.csproj
@@ -264,10 +265,16 @@ The solution uses `.slnx` format for better performance and modern tooling suppo
 
 All NuGet dependencies are managed centrally through the solution file. Key packages:
 
-- **Microsoft.Extensions.DependencyInjection** - Dependency injection
-- **Serilog.Sinks.File** - File-based logging
-- **H.NotifyIcon.Wpf** - System tray functionality
-- **CommunityToolkit.WinUI.Notifications** - Native Windows toast notifications
+- **Microsoft.Extensions.DependencyInjection 10.0.7** - Dependency injection
+- **Microsoft.Extensions.Http 10.0.7** - HTTP client factory
+- **Microsoft.Extensions.Logging 10.0.7** - Logging abstraction
+- **Microsoft.Extensions.Options 10.0.7** - Configuration options pattern
+- **Serilog 4.3.1** with **Serilog.Sinks.File 7.0.0** - Structured file-based logging
+- **Serilog.Extensions.Logging 10.0.0** - Integration with Microsoft.Extensions.Logging
+- **H.NotifyIcon.Wpf 2.4.1** - System tray functionality
+- **WPF-UI 4.2.1** - Modern WPF controls
+- **CommunityToolkit.WinUI.Notifications 7.1.2** - Native Windows toast notifications
+- **CommunityToolkit.Mvvm 8.4.2** - MVVM helpers and source generators
 
 ## Configuration
 
@@ -285,19 +292,19 @@ When JIRA integration is enabled, the settings file contains:
 ```json
 {
   "JiraConfiguration": {
-    "Enabled": true,
-    "BaseUrl": "https://yourcompany.atlassian.net",
-    "Email": "your.email@company.com",
-    "ApiToken": "your-api-token-here",
+    "Company": "yourcompany",
     "JqlFilter": "assignee = currentUser() AND statusCategory != Done"
   }
 }
 ```
 
-**⚠️ Security**: 
+**Note**: Authentication credentials (email and API token) are stored securely in Windows Credential Manager, not in the settings file.
+
+**⚠️ Security Note**: 
+- JIRA company name and JQL filter are stored in: `%LocalApplicationData%\FocusTray\settings.json`
+- Authentication credentials (email and API token) are stored securely in **Windows Credential Manager**
 - Never commit `settings.json` to source control
-- Keep your API token secure
-- Settings file is created on first configuration save
+- Credentials are encrypted and managed by Windows
 
 ## License
 

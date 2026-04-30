@@ -84,10 +84,10 @@ public class TimerService : ITimerService
 ## JIRA Integration Details
 
 - **Configuration file**: `%LocalApplicationData%\FocusTray\settings.json` (never commit)
-- **Authentication**: Basic Auth with email + JIRA API token
-- **API endpoint pattern**: Assumes Atlassian Cloud (`https://yourcompany.atlassian.net/rest/api/3/...`)
+- **Authentication**: Credentials stored securely in Windows Credential Manager; only company name and JQL filter in settings file
+- **API endpoint pattern**: Assumes Atlassian Cloud (`https://{company}.atlassian.net/rest/api/3/...`)
 - **Worklog on session end**: Optional user confirmation to log time to JIRA issue
-- **Integration tests**: Skipped automatically if `JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN` environment variables are not set
+- **Integration tests**: Skipped automatically if `JIRA_COMPANY`, `JIRA_EMAIL`, `JIRA_API_TOKEN` environment variables are not set
 
 ## Common Patterns
 

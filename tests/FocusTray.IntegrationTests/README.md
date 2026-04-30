@@ -18,21 +18,21 @@ JIRA integration tests require real credentials. They are **skipped by default**
 
 **Windows (PowerShell):**
 ```powershell
-$env:JIRA_BASE_URL = "https://yourcompany.atlassian.net"
+$env:JIRA_COMPANY = "yourcompany"  # Company name only (e.g., for yourcompany.atlassian.net)
 $env:JIRA_EMAIL = "your.email@company.com"
 $env:JIRA_API_TOKEN = "your-api-token-here"
 ```
 
 **Windows (Command Prompt):**
 ```cmd
-set JIRA_BASE_URL=https://yourcompany.atlassian.net
+set JIRA_COMPANY=yourcompany
 set JIRA_EMAIL=your.email@company.com
 set JIRA_API_TOKEN=your-api-token-here
 ```
 
 **Linux/macOS:**
 ```bash
-export JIRA_BASE_URL="https://yourcompany.atlassian.net"
+export JIRA_COMPANY="yourcompany"
 export JIRA_EMAIL="your.email@company.com"
 export JIRA_API_TOKEN="your-api-token-here"
 ```

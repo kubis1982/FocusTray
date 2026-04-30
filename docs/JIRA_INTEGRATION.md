@@ -30,10 +30,11 @@ FocusTray integrates with Atlassian Cloud JIRA to automatically track time spent
 2. Select **"JIRA Settings"** from the context menu
 3. Fill in the configuration form:
 
-   **Base URL**:
-   - Your JIRA Cloud instance URL
-   - Format: `https://yourcompany.atlassian.net`
-   - Do NOT include `/wiki` or other paths
+   **Company Name**:
+   - Your Atlassian company identifier only
+   - Format: `yourcompany` (for yourcompany.atlassian.net)
+   - Do NOT include `.atlassian.net` or `https://`
+   - Example: If your JIRA URL is `https://acmecorp.atlassian.net`, enter `acmecorp`
    
    **Email**:
    - Your Atlassian account email
@@ -108,14 +109,13 @@ Example: `C:\Users\YourName\AppData\Local\FocusTray\settings.json`
 ```json
 {
   "JiraConfiguration": {
-    "Enabled": true,
-    "BaseUrl": "https://company.atlassian.net",
-    "Email": "user@company.com",
-    "ApiToken": "ATATT3xFfGF0...",
+    "Company": "yourcompany",
     "JqlFilter": "assignee = currentUser() AND statusCategory != Done"
   }
 }
 ```
+
+**Note**: Authentication credentials (email and API token) are stored securely in **Windows Credential Manager**, not in the settings file. This provides better security by using Windows' encrypted credential storage.
 
 ### Default JQL Filter Explained
 
