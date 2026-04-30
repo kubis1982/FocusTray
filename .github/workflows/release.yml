@@ -1,0 +1,117 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build, package and release
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: extract_version
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF -replace '^refs/tags/v',''
+          Write-Output "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Host "Version: $version"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build (optional)
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Publish single-file (Windows x64)
+        shell: pwsh
+        run: |
+          $version = '${{ steps.extract_version.outputs.version }}'
+          Write-Host "Publishing version $version (win-x64)"
+          dotnet publish src/FocusTray/FocusTray.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:Version=$version `
+            --output ./publish/win-x64
+
+      - name: Create artifact for Winget (zip + checksum)
+        id: create_artifact
+        shell: pwsh
+        run: |
+          $version = '${{ steps.extract_version.outputs.version }}'
+          New-Item -ItemType Directory -Force -Path ./artifacts | Out-Null
+          $zipName = "focustray-win-x64-v$version.zip"
+          if (Test-Path ./publish/win-x64) {
+            Compress-Archive -Path ./publish/win-x64/* -DestinationPath ./artifacts/$zipName -Force
+            $hash = (Get-FileHash -Path ./artifacts/$zipName -Algorithm SHA256).Hash
+            Write-Output "artifact=$zipName" >> $env:GITHUB_OUTPUT
+            Write-Output "sha256=$hash" >> $env:GITHUB_OUTPUT
+            Write-Host "Created ./artifacts/$zipName (sha256: $hash)"
+          } else {
+            Write-Error "Publish folder not found"
+            exit 1
+          }
+
+      - name: Generate release notes
+        id: release_notes
+        shell: pwsh
+        run: |
+          $version = '${{ steps.extract_version.outputs.version }}'
+          # Determine previous tag (semantic sort)
+          $tags = (git tag --list 'v*.*.*' --sort=-version:refname) -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' }
+          $previous = $tags | Where-Object { $_ -ne "v$version" } | Select-Object -First 1
+          if (-not $previous) { $previous = (git rev-list --max-parents=0 HEAD).Trim() }
+
+          Write-Host "Previous tag: $previous"
+
+          $commits = @()
+          try {
+            $commits = git log "$previous..v$version" --pretty=format:"- %s (%h)" --no-merges | Out-String
+          } catch {
+            $commits = git log -n 25 --pretty=format:"- %s (%h)" --no-merges | Out-String
+          }
+
+          $zip = "${{ steps.create_artifact.outputs.artifact }}"
+          $sha = "${{ steps.create_artifact.outputs.sha256 }}"
+
+          $notes = "# FocusTray v$version`n`n"
+          $notes += "## 📋 What's Changed`n`n"
+          $notes += $commits
+          $notes += "`n---`n`n"
+          $notes += "## 📦 Artifacts`n`n"
+          $notes += "- `focustray-win-x64-v$version.zip` (SHA256: $sha)`n`n"
+          $notes += "## 📝 Installation`n`n"
+          $notes += "Download and extract the ZIP. Add the executable to PATH or use winget manifest to distribute.`n`n"
+
+          $notes | Out-File -FilePath release-notes.md -Encoding UTF8
+          Get-Content release-notes.md
+
+      - name: Create GitHub Release and upload asset
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: FocusTray ${{ steps.extract_version.outputs.version }}
+          body_path: release-notes.md
+          files: ./artifacts/*.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
