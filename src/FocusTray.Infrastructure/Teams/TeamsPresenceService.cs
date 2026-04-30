@@ -224,20 +224,13 @@ public class TeamsPresenceService : ITeamsPresenceService
     /// <summary>
     /// Token provider for Microsoft.Graph authentication.
     /// </summary>
-    private class TokenProvider : IAccessTokenProvider
+    private class TokenProvider(string accessToken) : IAccessTokenProvider
     {
-        private readonly string _accessToken;
-
-        public TokenProvider(string accessToken)
-        {
-            _accessToken = accessToken;
-        }
-
         public Task<string> GetAuthorizationTokenAsync(Uri uri, Dictionary<string, object>? additionalAuthenticationContext = null, CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(_accessToken);
+            return Task.FromResult(accessToken);
         }
 
-        public AllowedHostsValidator AllowedHostsValidator => new AllowedHostsValidator();
+        public AllowedHostsValidator AllowedHostsValidator => new();
     }
 }

@@ -10,10 +10,7 @@ namespace FocusTray.Infrastructure.Teams;
 /// Uses MSAL (Microsoft Authentication Library) for browser-based authentication flow.
 /// </summary>
 public class TeamsAuthService : ITeamsAuthService
-{
-    private const string CredentialTarget = "FocusTray_Teams";
-    
-    private readonly ICredentialService _credentialService;
+{    
     private readonly ILogger<TeamsAuthService> _logger;
     private readonly IPublicClientApplication _msalClient;
     private readonly MsalTokenCacheHelper _tokenCacheHelper;
@@ -25,10 +22,8 @@ public class TeamsAuthService : ITeamsAuthService
     private DateTime _tokenExpiry;
 
     public TeamsAuthService(
-        ICredentialService credentialService,
         ILogger<TeamsAuthService> logger)
     {
-        _credentialService = credentialService ?? throw new ArgumentNullException(nameof(credentialService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         
         // Initialize token cache helper
@@ -85,18 +80,6 @@ public class TeamsAuthService : ITeamsAuthService
                 ExpiresAt = _tokenExpiry
             };
 
-            var tokenJson = JsonSerializer.Serialize(tokenData);
-            var credentialsSaved = _credentialService.SaveCredentials(
-                CredentialTarget,
-                _currentUsername,
-                tokenJson);
-
-            if (!credentialsSaved)
-            {
-                _logger.LogError("Failed to save tokens to secure storage");
-                return false;
-            }
-
             // Update state
             _isLoggedIn = true;
 
@@ -130,14 +113,6 @@ public class TeamsAuthService : ITeamsAuthService
             foreach (var account in accounts)
             {
                 await _msalClient.RemoveAsync(account);
-            }
-
-            // Delete tokens from secure storage
-            var deleted = _credentialService.DeleteCredentials(CredentialTarget);
-
-            if (!deleted)
-            {
-                _logger.LogWarning("Failed to delete credentials (may not exist)");
             }
 
             // Clear persistent token cache
@@ -230,13 +205,6 @@ public class TeamsAuthService : ITeamsAuthService
         try
         {
             _logger.LogInformation("Attempting auto-login to Microsoft Teams");
-
-            // Check if we have stored credentials
-            if (!_credentialService.HasStoredCredentials(CredentialTarget))
-            {
-                _logger.LogInformation("No stored credentials found for auto-login");
-                return false;
-            }
 
             // Try to get account from MSAL cache
             var accounts = await _msalClient.GetAccountsAsync();
