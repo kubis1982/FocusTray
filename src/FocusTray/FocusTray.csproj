@@ -1,81 +1,69 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-	<ItemGroup>
-		<ProjectReference Include="..\FocusTray.Core\FocusTray.Core.csproj" />
-		<ProjectReference Include="..\FocusTray.Infrastructure\FocusTray.Infrastructure.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-		<PackageReference Include="H.NotifyIcon.Wpf" Version="2.4.1" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.7" />
-		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.7" />
-		<PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.7" />
-		<PackageReference Include="Microsoft.Extensions.Options" Version="10.0.7" />
-		<PackageReference Include="Serilog" Version="4.3.1" />
-		<PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" />
-		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
-		<PackageReference Include="WPF-UI" Version="4.2.1" />
-		<PackageReference Include="CommunityToolkit.WinUI.Notifications" Version="7.1.2" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<Resource Include="Resources\favicon.ico" />
-		<Resource Include="Resources\bell-48.ico" />
-		<Resource Include="Resources\bell-with-slash-48.ico" />
-	</ItemGroup>
-
-	<PropertyGroup>
-		<OutputType>WinExe</OutputType>
-		<TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
-		<UseWPF>true</UseWPF>
-		<ApplicationIcon>Resources\favicon.ico</ApplicationIcon>		
-	</PropertyGroup>
-
-	<PropertyGroup>
-		<Product>FocusTray</Product>
-		<Description>A minimalist Windows system tray application that helps you maintain deep focus during work sessions with JIRA integration</Description>		
-		<PackageTags>productivity;focus;timer;pomodoro;jira;system-tray;windows</PackageTags>
-	</PropertyGroup>
-
-	<!-- Self-contained deployment configuration (Release publishing only) -->
-	<PropertyGroup Condition="'$(Configuration)' == 'Release' AND '$(PublishDir)' != ''">
-		<SelfContained>true</SelfContained>
-		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
-		<PublishSingleFile>true</PublishSingleFile>
-		<PublishReadyToRun>false</PublishReadyToRun>
-		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
-		<DebugType>none</DebugType>
-		<DebugSymbols>false</DebugSymbols>
-	</PropertyGroup>
-
-	<!-- MSIX Packaging Configuration -->
-	<PropertyGroup>
-		<!-- Package Identity for Microsoft Store -->
-		<PackageName>Kubis1982.FocusTray</PackageName>
-		<PackageDisplayName>FocusTray</PackageDisplayName>
-		<PublisherDisplayName>Kubis</PublisherDisplayName>
-		
-		<!-- Manifest and Assets -->
-		<AppxManifest>..\..\build\msix\AppxManifest.xml</AppxManifest>
-		<AppxPackageDir>$(MSBuildProjectDirectory)\..\..\AppPackage\</AppxPackageDir>
-		
-		<!-- Platform Settings -->
-		<AppxPlatform>x64</AppxPlatform>
-		<AppxGeneratePrisForPortableLibraries>true</AppxGeneratePrisForPortableLibraries>
-		<AppxUseHardlinksIfPossible>true</AppxUseHardlinksIfPossible>
-		<AppxSymbolPackageGeneration>false</AppxSymbolPackageGeneration>
-		
-		<!-- Deployment Target -->
-		<AppxMinimumOSVersion>10.0.19041.0</AppxMinimumOSVersion>
-		<AppxTargetDeviceFamily>Windows.Desktop</AppxTargetDeviceFamily>
-	</PropertyGroup>
-
-	<!-- MSIX Certificate Configuration (can be overridden at build time) -->
-	<PropertyGroup Condition="'$(AppxPackageSigningEnabled)' == ''">
-		<!-- By default, disable signing. Enable via -p:AppxPackageSigningEnabled=true at build time -->
-		<AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
-	</PropertyGroup>
-
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\FocusTray.Core\FocusTray.Core.csproj" />
+    <ProjectReference Include="..\FocusTray.Infrastructure\FocusTray.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="H.NotifyIcon.Wpf" Version="2.4.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.7" />
+    <PackageReference Include="Serilog" Version="4.3.1" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="WPF-UI" Version="4.2.1" />
+    <PackageReference Include="CommunityToolkit.WinUI.Notifications" Version="7.1.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\favicon.ico" />
+    <Resource Include="Resources\bell-48.ico" />
+    <Resource Include="Resources\bell-with-slash-48.ico" />
+  </ItemGroup>
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>Resources\favicon.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup>
+    <Product>FocusTray</Product>
+    <Description>A minimalist Windows system tray application that helps you maintain deep focus during work sessions with JIRA integration</Description>
+    <PackageTags>productivity;focus;timer;pomodoro;jira;system-tray;windows</PackageTags>
+  </PropertyGroup>
+  <!-- Self-contained deployment configuration (Release publishing only) -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release' AND '$(PublishDir)' != ''">
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+  <!-- MSIX Packaging Configuration -->
+  <PropertyGroup>
+    <!-- Package Identity for Microsoft Store -->
+    <PackageName>Kubis1982.FocusTray</PackageName>
+    <PackageDisplayName>FocusTray</PackageDisplayName>
+    <PublisherDisplayName>Kubis</PublisherDisplayName>
+    <!-- Manifest and Assets -->
+    <AppxManifest>..\..\build\msix\AppxManifest.xml</AppxManifest>
+    <AppxPackageDir>$(MSBuildProjectDirectory)\..\..\AppPackage\</AppxPackageDir>
+    <!-- Platform Settings -->
+    <AppxPlatform>x64</AppxPlatform>
+    <AppxGeneratePrisForPortableLibraries>true</AppxGeneratePrisForPortableLibraries>
+    <AppxUseHardlinksIfPossible>true</AppxUseHardlinksIfPossible>
+    <AppxSymbolPackageGeneration>false</AppxSymbolPackageGeneration>
+    <!-- Deployment Target -->
+    <AppxMinimumOSVersion>10.0.19041.0</AppxMinimumOSVersion>
+    <AppxTargetDeviceFamily>Windows.Desktop</AppxTargetDeviceFamily>
+  </PropertyGroup>
+  <!-- MSIX Certificate Configuration (can be overridden at build time) -->
+  <PropertyGroup Condition="'$(AppxPackageSigningEnabled)' == ''">
+    <!-- By default, disable signing. Enable via -p:AppxPackageSigningEnabled=true at build time -->
+    <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
+  </PropertyGroup>
 </Project>

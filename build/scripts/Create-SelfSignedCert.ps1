@@ -22,7 +22,7 @@ Write-Host "🔐 Generating self-signed certificate for MSIX signing..."
 
 # Certificate parameters
 $params = @{
-    Subject = "CN=Kubis1982"
+    Subject = "CN=C6D97395-BB63-4D24-92FA-EB7C6071EA13"
     FriendlyName = "FocusTray Self-Signed Testing Certificate"
     CertStoreLocation = "Cert:\CurrentUser\My"
     KeyExportPolicy = "Exportable"
