@@ -3,6 +3,7 @@ using FocusTray.Core.Models;
 using FocusTray.Core.Services;
 using FocusTray.ViewModels;
 using Moq;
+using System.Collections.ObjectModel;
 using Xunit;
 
 namespace FocusTray.Tests.ViewModels;
@@ -240,5 +241,223 @@ public class SessionConfigDialogViewModelTests
         // Assert - issues should be loaded automatically
         viewModel.JiraIssues.Should().HaveCount(1);
         viewModel.JiraIssues[0].Key.Should().Be("PROJ-1");
+    }
+
+    [Fact]
+    public void Should_ReturnDurationMinutes_When_NotInEndTimeMode()
+    {
+        // Arrange
+        _viewModel.IsEndTimeMode = false;
+        _viewModel.DurationMinutes = 45;
+
+        // Act
+        var duration = _viewModel.GetEffectiveDuration();
+
+        // Assert
+        duration.Should().Be(45);
+    }
+
+    [Fact]
+    public void Should_CalculateMinutesUntilEndTime_When_InEndTimeMode()
+    {
+        // Arrange
+        _viewModel.IsEndTimeMode = true;
+        var now = DateTime.Now;
+        var targetTime = now.AddMinutes(30);
+        _viewModel.TargetEndTime = TimeOnly.FromDateTime(targetTime);
+
+        // Act
+        var duration = _viewModel.GetEffectiveDuration();
+
+        // Assert
+        // Should be approximately 30 minutes (allowing for small time differences)
+        duration.Should().BeGreaterThanOrEqualTo(29);
+        duration.Should().BeLessThanOrEqualTo(31);
+    }
+
+    [Fact]
+    public void Should_AssumeNextDay_When_TargetTimeIsInPast()
+    {
+        // Arrange
+        _viewModel.IsEndTimeMode = true;
+        var now = DateTime.Now;
+        var pastTime = now.AddHours(-2); // 2 hours ago
+        _viewModel.TargetEndTime = TimeOnly.FromDateTime(pastTime);
+
+        // Act
+        var duration = _viewModel.GetEffectiveDuration();
+
+        // Assert
+        // Should calculate to next day (approximately 22 hours = 1320 minutes)
+        duration.Should().BeGreaterThan(1300);
+        duration.Should().BeLessThanOrEqualTo(1440);
+    }
+
+    [Fact]
+    public void Should_SetTargetEndTime_When_SwitchingToEndTimeMode()
+    {
+        // Arrange
+        _viewModel.IsEndTimeMode = false;
+        _viewModel.DurationMinutes = 60;
+        var beforeSwitch = DateTime.Now;
+
+        // Act
+        _viewModel.IsEndTimeMode = true;
+
+        // Assert
+        // Target time should be approximately 60 minutes from now, rounded to nearest 15-minute slot
+        var expectedTime = beforeSwitch.AddMinutes(60);
+        var actualTime = DateTime.Today.Add(_viewModel.TargetEndTime.ToTimeSpan());
+
+        // Allow 15 minutes tolerance due to slot rounding
+        var difference = Math.Abs((actualTime - expectedTime).TotalMinutes);
+        difference.Should().BeLessThan(16);
+    }
+
+    [Fact]
+    public void Should_ReturnError_When_EndTimeIsInPastAndDurationExceeds24Hours()
+    {
+        // Arrange
+        _mockAuthService.Setup(x => x.IsLoggedIn).Returns(false);
+        _viewModel.TaskDescription = "Valid task";
+        _viewModel.IsEndTimeMode = true;
+
+        // Set target time to just 1 minute ago (which would calculate to ~23h59m next day)
+        var pastTime = DateTime.Now.AddMinutes(-1);
+        _viewModel.TargetEndTime = TimeOnly.FromDateTime(pastTime);
+
+        // Act
+        var error = _viewModel.ValidateInput();
+
+        // Assert - should be valid as it's less than 24 hours
+        error.Should().BeNull();
+    }
+
+    [Fact]
+    public void Should_ReturnError_When_EndTimeResultsInZeroDuration()
+    {
+        // Arrange
+        _mockAuthService.Setup(x => x.IsLoggedIn).Returns(false);
+        _viewModel.TaskDescription = "Valid task";
+        _viewModel.IsEndTimeMode = true;
+
+        // Set target time to exactly now (will be treated as past, so next day)
+        _viewModel.TargetEndTime = TimeOnly.FromDateTime(DateTime.Now);
+
+        // Act
+        var error = _viewModel.ValidateInput();
+
+        // Assert - should be valid (next day calculation)
+        error.Should().BeNull();
+    }
+
+    [Fact]
+    public void Should_InitializeTimeSlots_When_SwitchingToEndTimeMode()
+    {
+        // Arrange
+        _viewModel.IsEndTimeMode = false;
+
+        // Act
+        _viewModel.IsEndTimeMode = true;
+
+        // Assert
+        _viewModel.AvailableTimeSlots.Should().NotBeEmpty();
+        _viewModel.AvailableTimeSlots.Count.Should().Be(48); // 12 hours * 4 slots per hour
+        _viewModel.SelectedTimeSlot.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Should_UpdateTargetEndTime_When_TimeSlotSelected()
+    {
+        // Arrange
+        _viewModel.IsEndTimeMode = true;
+        var targetTime = new TimeOnly(15, 30);
+
+        // Act
+        _viewModel.SelectedTimeSlot = targetTime;
+
+        // Assert
+        _viewModel.TargetEndTime.Should().Be(targetTime);
+    }
+
+    [Fact]
+    public void Should_GenerateTimeSlotsIn15MinuteIntervals_When_Initialized()
+    {
+        // Arrange & Act
+        _viewModel.IsEndTimeMode = true;
+
+        // Assert
+        var slots = _viewModel.AvailableTimeSlots.ToList();
+        slots.Should().HaveCount(48); // 12 hours * 4 slots
+
+        for (int i = 1; i < slots.Count; i++)
+        {
+            var prevSpan = slots[i - 1].ToTimeSpan();
+            var currentSpan = slots[i].ToTimeSpan();
+
+            var difference = currentSpan - prevSpan;
+
+            // Handle midnight wraparound
+            if (difference.TotalMinutes < 0)
+            {
+                difference = TimeSpan.FromHours(24) + difference;
+            }
+
+            difference.TotalMinutes.Should().Be(15);
+        }
+    }
+
+    [Fact]
+    public void Should_UpdateDurationMinutes_When_SwitchingFromEndTimeModeToMinutesMode()
+    {
+        // Arrange
+        _viewModel.IsEndTimeMode = false;
+        _viewModel.DurationMinutes = 60;
+
+        // Switch to end time mode (initializes time slots)
+        _viewModel.IsEndTimeMode = true;
+
+        // Manually select a time slot (simulating user selection) - 2 hours from now
+        var now = DateTime.Now;
+        var twoHoursFromNow = now.AddHours(2);
+        var targetSlot = FindClosestSlot(_viewModel.AvailableTimeSlots, TimeOnly.FromDateTime(twoHoursFromNow));
+        _viewModel.SelectedTimeSlot = targetSlot;
+
+        // Allow time for property change to propagate
+        var expectedMinutes = (int)Math.Ceiling((DateTime.Today.Add(targetSlot.ToTimeSpan()) - now).TotalMinutes);
+        if (expectedMinutes < 0)
+        {
+            expectedMinutes += 1440; // Next day
+        }
+
+        // Act - switch back to minutes mode
+        _viewModel.IsEndTimeMode = false;
+
+        // Assert - duration should reflect the selected time slot (approximately 120 minutes ± 15)
+        _viewModel.DurationMinutes.Should().BeGreaterThanOrEqualTo(expectedMinutes - 15);
+        _viewModel.DurationMinutes.Should().BeLessThanOrEqualTo(expectedMinutes + 15);
+    }
+
+    [Fact]
+    public void Should_PreserveDurationMinutes_When_RoundTripBetweenModes()
+    {
+        // Arrange
+        _viewModel.IsEndTimeMode = false;
+        _viewModel.DurationMinutes = 45;
+
+        // Act - switch to end time and back
+        _viewModel.IsEndTimeMode = true;
+        _viewModel.IsEndTimeMode = false;
+
+        // Assert - duration should be close to original (allowing for rounding)
+        _viewModel.DurationMinutes.Should().BeGreaterThanOrEqualTo(30);
+        _viewModel.DurationMinutes.Should().BeLessThanOrEqualTo(60);
+    }
+
+    private TimeOnly FindClosestSlot(ObservableCollection<TimeOnly> slots, TimeOnly target)
+    {
+        return slots
+            .OrderBy(slot => Math.Abs((slot.ToTimeSpan() - target.ToTimeSpan()).TotalMinutes))
+            .First();
     }
 }

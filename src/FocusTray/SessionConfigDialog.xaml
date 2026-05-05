@@ -14,10 +14,13 @@
         <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
         <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
         <converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
+        <converters:TimeOnlyToDateTimeConverter x:Key="TimeOnlyToDateTimeConverter"/>
+        <converters:TimeOnlyStringConverter x:Key="TimeOnlyStringConverter"/>
     </Window.Resources>
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -73,18 +76,48 @@
 
         <!-- Duration -->
         <TextBlock Grid.Row="4" 
-                   Text="Duration (minutes)" 
+                   Text="Duration" 
                    FontWeight="Bold" 
                    Margin="0,0,0,5"/>
 
+        <!-- Duration mode selection (horizontal) -->
+        <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="0,0,0,10">
+            <RadioButton Content="Minutes" 
+                         IsChecked="{Binding IsEndTimeMode, Converter={StaticResource InverseBoolConverter}}"
+                         Margin="0,0,15,0"/>
+            <RadioButton Content="Until time" 
+                         IsChecked="{Binding IsEndTimeMode}"/>
+        </StackPanel>
+
+        <!-- Duration input (visible when NOT in end-time mode) -->
         <TextBox x:Name="DurationTextBox" 
-                 Grid.Row="5" 
+                 Grid.Row="6" 
                  Text="{Binding DurationMinutes, UpdateSourceTrigger=PropertyChanged}"
                  Margin="0,0,0,15" 
-                 MaxLength="4"/>
+                 MaxLength="4"
+                 Visibility="{Binding IsEndTimeMode, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+
+        <!-- End time input (visible when in end-time mode) -->
+        <StackPanel Grid.Row="6" 
+                    Orientation="Horizontal"
+                    Visibility="{Binding IsEndTimeMode, Converter={StaticResource BoolToVisibilityConverter}}"
+                    Margin="0,0,0,15">
+            <TextBlock Text="Target time:" 
+                       VerticalAlignment="Center" 
+                       Margin="0,0,10,0"/>
+            <ComboBox ItemsSource="{Binding AvailableTimeSlots}"
+                      SelectedItem="{Binding SelectedTimeSlot}"
+                      Width="100">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding StringFormat='HH:mm'}"/>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+        </StackPanel>
 
         <!-- Buttons -->
-        <StackPanel Grid.Row="6" 
+        <StackPanel Grid.Row="7" 
                     Orientation="Horizontal" 
                     HorizontalAlignment="Right">
             <Button Content="Start" 

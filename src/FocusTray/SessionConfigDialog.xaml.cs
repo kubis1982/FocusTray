@@ -45,8 +45,8 @@ public partial class SessionConfigDialog : Window
         try
         {
             var taskDescription = _viewModel.GetEffectiveTaskDescription();
-            var duration = TimeSpan.FromMinutes(_viewModel.DurationMinutes);
-            
+            var duration = TimeSpan.FromMinutes(_viewModel.GetEffectiveDuration());
+
             _timerService.StartSession(taskDescription, duration);
             
             // Store the JIRA issue key for later worklog
