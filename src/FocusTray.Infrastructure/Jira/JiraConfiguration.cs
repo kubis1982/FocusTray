@@ -6,11 +6,6 @@ namespace FocusTray.Infrastructure.Jira;
 public class JiraConfiguration
 {
     /// <summary>
-    /// Gets or sets the JIRA company name (e.g., "yourcompany" for yourcompany.atlassian.net).
-    /// </summary>
-    public string Company { get; set; } = string.Empty;
-    
-    /// <summary>
     /// Gets or sets the JQL query to fetch assigned issues.
     /// Default: "assignee = currentUser() AND statusCategory != Done"
     /// </summary>
