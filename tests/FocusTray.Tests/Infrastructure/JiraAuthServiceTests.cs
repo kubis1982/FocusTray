@@ -11,13 +11,14 @@ using Xunit;
 
 namespace FocusTray.Tests.Infrastructure;
 
-public class JiraAuthServiceTests
+public class JiraAuthServiceTests : IDisposable
 {
     private readonly Mock<ICredentialService> _mockCredentialService;
     private readonly Mock<IJiraSitePickerPrompt> _mockSitePickerPrompt;
     private readonly Mock<HttpMessageHandler> _mockHttpHandler;
     private readonly HttpClient _httpClient;
     private readonly Mock<ILogger<JiraAuthService>> _mockLogger;
+    private readonly string _tempCacheDirectory;
 
     public JiraAuthServiceTests()
     {
@@ -28,10 +29,19 @@ public class JiraAuthServiceTests
         _mockHttpHandler = new Mock<HttpMessageHandler>();
         _httpClient = new HttpClient(_mockHttpHandler.Object);
         _mockLogger = new Mock<ILogger<JiraAuthService>>();
+        _tempCacheDirectory = Path.Combine(Path.GetTempPath(), "FocusTrayTests_" + Guid.NewGuid());
     }
 
     private JiraAuthService CreateService() =>
-        new(_mockCredentialService.Object, _mockSitePickerPrompt.Object, _httpClient, _mockLogger.Object);
+        new(_mockCredentialService.Object, _mockSitePickerPrompt.Object, _httpClient, _mockLogger.Object, _tempCacheDirectory);
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_tempCacheDirectory))
+        {
+            Directory.Delete(_tempCacheDirectory, recursive: true);
+        }
+    }
 
     [Fact]
     public void Should_RemoveLegacyCredentials_When_ConstructedWithLegacyBasicAuthStored()

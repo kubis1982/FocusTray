@@ -31,13 +31,14 @@ public class JiraAuthService : IJiraAuthService
         ICredentialService credentialService,
         IJiraSitePickerPrompt sitePickerPrompt,
         HttpClient httpClient,
-        ILogger<JiraAuthService> logger)
+        ILogger<JiraAuthService> logger,
+        string? cacheDirectory = null)
     {
         _credentialService = credentialService ?? throw new ArgumentNullException(nameof(credentialService));
         _sitePickerPrompt = sitePickerPrompt ?? throw new ArgumentNullException(nameof(sitePickerPrompt));
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _tokenCacheHelper = new JiraTokenCacheHelper(logger);
+        _tokenCacheHelper = new JiraTokenCacheHelper(logger, cacheDirectory);
         _callbackListener = new JiraCallbackListener();
 
         RemoveLegacyBasicAuthCredentials();
