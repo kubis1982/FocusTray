@@ -220,6 +220,7 @@ public class JiraServiceTests
         capturedRequest!.Headers.Authorization.Should().NotBeNull();
         capturedRequest.Headers.Authorization!.Scheme.Should().Be("Bearer");
         capturedRequest.Headers.Authorization!.Parameter.Should().Be("test-access-token");
+        capturedRequest.RequestUri!.AbsoluteUri.Should().StartWith("https://api.atlassian.com/ex/jira/test-cloud-id/rest/api/2/");
     }
 
     [Fact]
