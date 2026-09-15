@@ -5,6 +5,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="IdentityModel" Version="7.0.0" />
 		<PackageReference Include="Kubis1982.Atlassian.Jira.RestClient.v2" Version="1.8464.1" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.7" />
 		<PackageReference Include="Microsoft.Graph" Version="5.105.0" />
