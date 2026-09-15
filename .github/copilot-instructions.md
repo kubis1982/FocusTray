@@ -35,7 +35,7 @@ A minimalist Windows system tray application that helps maintain deep focus duri
 - WPF dialogs: SessionConfigDialog, SessionStatusDialog (with analog clock visualization)
 
 **Infrastructure Layer:**
-- `JiraService` - REST API implementation using HttpClient + Basic Auth (email + API token)
+- `JiraService` - REST API implementation via Kiota-generated client, OAuth 2.0 (3LO) Bearer token authentication
 - HTTP client configured with base address and auth headers
 
 ## Code Style
@@ -84,10 +84,10 @@ public class TimerService : ITimerService
 ## JIRA Integration Details
 
 - **Configuration file**: `%LocalApplicationData%\FocusTray\settings.json` (never commit)
-- **Authentication**: Credentials stored securely in Windows Credential Manager; only company name and JQL filter in settings file
-- **API endpoint pattern**: Assumes Atlassian Cloud (`https://{company}.atlassian.net/rest/api/3/...`)
+- **Authentication**: OAuth 2.0 (3LO) via `JiraAuthService`; tokens encrypted (DPAPI) in `jira_token_cache.dat`; only the JQL filter lives in settings file
+- **API endpoint pattern**: Atlassian Cloud via the OAuth gateway (`https://api.atlassian.com/ex/jira/{cloudId}/rest/api/2/...`), not the site's own subdomain
 - **Worklog on session end**: Optional user confirmation to log time to JIRA issue
-- **Integration tests**: Skipped automatically if `JIRA_COMPANY`, `JIRA_EMAIL`, `JIRA_API_TOKEN` environment variables are not set
+- **Integration tests**: Skipped automatically if `JIRA_ACCESS_TOKEN`, `JIRA_CLOUD_ID` environment variables are not set
 
 ## Common Patterns
 

@@ -29,7 +29,7 @@ dotnet publish src/FocusTray/FocusTray.csproj -c Release
 .\build\scripts\Build-MSIX.ps1
 ```
 
-JIRA integration tests hit real Atlassian Cloud and are **skipped automatically** unless `JIRA_COMPANY`, `JIRA_EMAIL`, and `JIRA_API_TOKEN` env vars are set (see `tests/FocusTray.IntegrationTests/README.md`). Never hardcode credentials in test files.
+JIRA integration tests hit real Atlassian Cloud and are **skipped automatically** unless `JIRA_ACCESS_TOKEN` and `JIRA_CLOUD_ID` env vars are set (see `tests/FocusTray.IntegrationTests/README.md`). Never hardcode credentials in test files.
 
 Target framework is `net10.0` / `net10.0-windows10.0.19041.0` (WPF requires Windows to build/run the UI project). The solution uses the `.slnx` format.
 
@@ -39,16 +39,16 @@ Three-layer Clean Architecture, dependencies point inward (`FocusTray` → `Focu
 
 - **`FocusTray.Core`** (`net10.0`) — domain layer, no external dependencies beyond `Microsoft.Extensions.Logging.Abstractions`. Defines models (`FocusSession`, `JiraIssue`, `JiraWorklog`, `TeamsPresenceStatus`, `TimerState`) and service *interfaces* (`ITimerService`, `IJiraService`, `IJiraAuthService`, `ITeamsAuthService`, `ITeamsPresenceService`, `ICredentialService`). Only `TimerService` is implemented here (pure timer logic); every other interface is implemented in `Infrastructure`.
 - **`FocusTray.Infrastructure`** (`net10.0`) — implements the Core interfaces against external systems:
-  - `Jira/JiraService.cs` — talks to Atlassian Cloud via `Kubis1982.Atlassian.Jira.RestClient.v2` (a Kiota-generated typed client, e.g. `jiraClient.Rest.Api.Two.Myself.GetAsync()`), not raw `HttpClient` calls. Auth is Basic (email + API token) via `JiraAuthService`.
+  - `Jira/JiraService.cs` — talks to Atlassian Cloud via `Kubis1982.Atlassian.Jira.RestClient.v2` (a Kiota-generated typed client, e.g. `jiraClient.Rest.Api.Two.Myself.GetAsync()`), not raw `HttpClient` calls. Auth is OAuth 2.0 (3LO) Authorization Code + PKCE via `JiraAuthService`, routed through `https://api.atlassian.com/ex/jira/{cloudId}/...` (not the JIRA site's own subdomain).
   - `Teams/TeamsAuthService.cs` — OAuth2 login to Microsoft Entra ID via MSAL (`Microsoft.Identity.Client`), interactive browser flow with silent-refresh/auto-login, persistent token cache in `MsalTokenCacheHelper`.
   - `Teams/TeamsPresenceService.cs` — uses `Microsoft.Graph` (`GraphServiceClient`) with a custom `IAccessTokenProvider` fed by `TeamsAuthService.GetAccessTokenAsync()` to set Teams presence to DoNotDisturb + a status message with expiry when a focus session starts, and clear it on session end.
-  - `Credentials/WindowsCredentialService.cs` — stores JIRA/Teams secrets in Windows Credential Manager (never in `settings.json`).
+  - `Credentials/WindowsCredentialService.cs` — DPAPI-backed credential store; today used only by `JiraAuthService` to delete a legacy Basic Auth credential left over from before the OAuth2 migration. Teams uses its own `MsalTokenCacheHelper`; JIRA uses its own `JiraTokenCacheHelper` (both are separate DPAPI-encrypted token caches, not this service).
 - **`FocusTray`** (`net10.0-windows10.0.19041.0`, WPF `WinExe`) — UI + composition root.
   - `App.xaml.cs` wires up the entire DI container by hand (`ServiceCollection` in `OnStartup`) — this is the single place all services, dialogs, and view models get registered. New services/dialogs must be registered here to be resolvable.
   - After building the container, `App` fires a non-blocking `TryAutoLoginAsync()` that attempts silent JIRA and Teams auto-login without surfacing errors to the user.
   - `MainWindow` hosts the system tray icon (H.NotifyIcon.Wpf) and its state (bell vs. bell-with-slash) mirrors `TimerState`.
   - `Views/` holds code-behind dialogs (JIRA login/settings, Teams login/settings, About, Session config/status); `ViewModels/` holds the MVVM view models (CommunityToolkit.Mvvm `ObservableObject`/`RelayCommand`) for the dialogs that have one — plain dialogs are driven from code-behind.
-  - `Services/SettingsService.cs` persists non-secret configuration (JIRA company + JQL filter, session defaults) to `%LocalApplicationData%\FocusTray\settings.json` via `JsonSerializer`.
+  - `Services/SettingsService.cs` persists non-secret configuration (JQL filter, session defaults) to `%LocalApplicationData%\FocusTray\settings.json` via `JsonSerializer`.
 
 Session lifecycle: `ITimerService` drives start/pause/resume/stop; on completion, if the session is linked to a JIRA issue, the user is prompted to log time via `IJiraService`, and if Teams is connected, presence/status is set on start and cleared on end via `ITeamsPresenceService`.
 
@@ -63,6 +63,6 @@ Session lifecycle: `ITimerService` drives start/pause/resume/stop; on completion
 
 ## Secrets and config
 
-- `%LocalApplicationData%\FocusTray\settings.json` holds only non-secret config (JIRA company, JQL filter) — never commit or write credentials here.
-- JIRA/Teams credentials and tokens live in Windows Credential Manager / MSAL's persistent cache, accessed through `ICredentialService` / `MsalTokenCacheHelper`.
+- `%LocalApplicationData%\FocusTray\settings.json` holds only non-secret config (JQL filter) — never commit or write credentials here.
+- JIRA OAuth2 tokens live in `%LocalApplicationData%\FocusTray\jira_token_cache.dat` (via `JiraTokenCacheHelper`); Teams OAuth2 tokens live in MSAL's persistent cache (via `MsalTokenCacheHelper`). Both are DPAPI-encrypted, per-Windows-user.
 - `nuget.config` restricts package sources to `nuget.org` only.
