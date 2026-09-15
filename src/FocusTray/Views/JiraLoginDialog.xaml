@@ -4,8 +4,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Login to JIRA" 
-        Height="Auto" 
+        Title="Login to JIRA"
+        Height="Auto"
         SizeToContent="Height"
         Width="500"
         WindowStartupLocation="CenterScreen"
@@ -17,81 +17,48 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <TextBlock Grid.Row="0" 
-                   Text="Login to JIRA" 
-                   FontSize="20" 
-                   FontWeight="Bold" 
+        <TextBlock Grid.Row="0"
+                   Text="Login to JIRA"
+                   FontSize="20"
+                   FontWeight="Bold"
                    Margin="0,0,0,20"/>
 
-        <!-- Company -->
-        <TextBlock Grid.Row="1" 
-                   Text="Company Name:" 
-                   Margin="0,0,0,5"/>
-        <TextBox Grid.Row="2" 
-                 Name="CompanyTextBox"
-                 Margin="0,0,0,15"
-                 ToolTip="Enter your company name (e.g., 'mycompany' for mycompany.atlassian.net)"/>
+        <TextBlock Grid.Row="1"
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,20">
+            <Run Text="Click the button below to sign in with your Atlassian account."/>
+            <LineBreak/>
+            <Run Text="A browser window will open for authentication."/>
+        </TextBlock>
 
-        <!-- Email -->
-        <TextBlock Grid.Row="3" 
-                   Text="Email:" 
-                   Margin="0,0,0,5"/>
-        <TextBox Grid.Row="4" 
-                 Name="EmailTextBox"
-                 Margin="0,0,0,15"
-                 ToolTip="Your Atlassian account email"/>
-
-        <!-- API Token -->
-        <TextBlock Grid.Row="5" 
-                   Text="API Token:" 
-                   Margin="0,0,0,5"/>
-        <PasswordBox Grid.Row="6" 
-                     Name="ApiTokenPasswordBox"
-                     Margin="0,0,0,10"
-                     ToolTip="Your JIRA API token"/>
-
-        <!-- Help Link -->
-        <StackPanel Grid.Row="7" 
-                    Orientation="Vertical" 
-                    Margin="0,0,0,15">
-            <TextBlock Text="Don't have an API token? " 
-                       VerticalAlignment="Center"/>
-            <TextBlock>
-                <Hyperlink NavigateUri="https://id.atlassian.com/manage-profile/security/api-tokens" 
-                           RequestNavigate="Hyperlink_RequestNavigate">
-                    Generate one here
-                </Hyperlink>
-            </TextBlock>
-        </StackPanel>
-
-        <!-- Status Message -->
-        <TextBlock Grid.Row="7" 
+        <TextBlock Grid.Row="2"
                    Name="StatusTextBlock"
-                   TextWrapping="Wrap" 
-                   Margin="0,40,0,15"
-                   VerticalAlignment="Bottom"/>
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,15"
+                   MinHeight="20"/>
 
-        <!-- Buttons -->
-        <StackPanel Grid.Row="8" 
-                    Orientation="Horizontal" 
+        <ProgressBar Grid.Row="3"
+                     Name="ProgressBar"
+                     Height="5"
+                     IsIndeterminate="True"
+                     Margin="0,0,0,15"
+                     Visibility="Collapsed"/>
+
+        <StackPanel Grid.Row="4"
+                    Orientation="Horizontal"
                     HorizontalAlignment="Right">
-            <Button Name="LoginButton" 
-                    Content="Test Connection &amp; Login" 
-                    Width="180" 
-                    Height="35" 
+            <Button Name="LoginButton"
+                    Content="Sign in with Atlassian"
+                    Width="180"
+                    Height="35"
                     Click="Login_Click"
                     Margin="0,0,10,0"/>
-            <Button Name="CancelButton" 
-                    Content="Cancel" 
-                    Width="100" 
-                    Height="35" 
+            <Button Name="CancelButton"
+                    Content="Cancel"
+                    Width="100"
+                    Height="35"
                     Click="Cancel_Click"
                     IsCancel="True"/>
         </StackPanel>

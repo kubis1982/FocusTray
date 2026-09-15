@@ -1,6 +1,4 @@
-using System.Diagnostics;
 using System.Windows;
-using System.Windows.Navigation;
 using FocusTray.ViewModels;
 
 namespace FocusTray.Views;
@@ -16,39 +14,22 @@ public partial class JiraLoginDialog : Window
         _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
         DataContext = _viewModel;
 
-        // Bind text boxes to view model
-        CompanyTextBox.SetBinding(System.Windows.Controls.TextBox.TextProperty, 
-            new System.Windows.Data.Binding(nameof(_viewModel.Company)) 
-            { 
-                Source = _viewModel, 
-                UpdateSourceTrigger = System.Windows.Data.UpdateSourceTrigger.PropertyChanged 
+        StatusTextBlock.SetBinding(System.Windows.Controls.TextBlock.TextProperty,
+            new System.Windows.Data.Binding(nameof(_viewModel.StatusMessage))
+            {
+                Source = _viewModel
             });
 
-        EmailTextBox.SetBinding(System.Windows.Controls.TextBox.TextProperty, 
-            new System.Windows.Data.Binding(nameof(_viewModel.Email)) 
-            { 
-                Source = _viewModel, 
-                UpdateSourceTrigger = System.Windows.Data.UpdateSourceTrigger.PropertyChanged 
-            });
-
-        // Bind status message
-        StatusTextBlock.SetBinding(System.Windows.Controls.TextBlock.TextProperty, 
-            new System.Windows.Data.Binding(nameof(_viewModel.StatusMessage)) 
-            { 
-                Source = _viewModel 
-            });
-
-        // Bind status message color based on success
         _viewModel.PropertyChanged += (s, e) =>
         {
             if (e.PropertyName == nameof(_viewModel.IsSuccess))
             {
-                StatusTextBlock.Foreground = _viewModel.IsSuccess 
-                    ? System.Windows.Media.Brushes.Green 
+                StatusTextBlock.Foreground = _viewModel.IsSuccess
+                    ? System.Windows.Media.Brushes.Green
                     : System.Windows.Media.Brushes.Red;
             }
-            else if (e.PropertyName == nameof(_viewModel.StatusMessage) && 
-                     _viewModel.StatusMessage.Contains("Connecting"))
+            else if (e.PropertyName == nameof(_viewModel.StatusMessage) &&
+                     _viewModel.StatusMessage.Contains("Signing in"))
             {
                 StatusTextBlock.Foreground = System.Windows.Media.Brushes.Blue;
             }
@@ -56,22 +37,20 @@ public partial class JiraLoginDialog : Window
             {
                 LoginButton.IsEnabled = !_viewModel.IsLoading;
                 CancelButton.IsEnabled = !_viewModel.IsLoading;
+                ProgressBar.Visibility = _viewModel.IsLoading
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
             }
         };
     }
 
     private async void Login_Click(object sender, RoutedEventArgs e)
     {
-        // Update API token from PasswordBox (can't bind directly for security)
-        _viewModel.ApiToken = ApiTokenPasswordBox.Password;
-
         await _viewModel.LoginCommand.ExecuteAsync(null);
 
-        // If login successful, close dialog
         if (_viewModel.IsSuccess)
         {
-            // Give user a moment to see the success message
-            await Task.Delay(1000);
+            await Task.Delay(1500);
             DialogResult = true;
             Close();
         }
@@ -81,22 +60,5 @@ public partial class JiraLoginDialog : Window
     {
         DialogResult = false;
         Close();
-    }
-
-    private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
-    {
-        try
-        {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = e.Uri.AbsoluteUri,
-                UseShellExecute = true
-            });
-            e.Handled = true;
-        }
-        catch
-        {
-            // Ignore errors opening browser
-        }
     }
 }
