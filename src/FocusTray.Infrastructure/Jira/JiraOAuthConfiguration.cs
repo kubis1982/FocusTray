@@ -7,7 +7,12 @@ namespace FocusTray.Infrastructure.Jira;
 /// </summary>
 public static class JiraOAuthConfiguration
 {
-    public const string ClientId = "REPLACE_WITH_ATLASSIAN_OAUTH_CLIENT_ID";
+    /// <summary>
+    /// Sentinel value ClientId holds until a real Atlassian OAuth 2.0 (3LO) app is registered.
+    /// </summary>
+    public const string PlaceholderClientId = "REPLACE_WITH_ATLASSIAN_OAUTH_CLIENT_ID";
+
+    public const string ClientId = "oqtnk1ajBy2bXpKioEO0rnPYte7YuvEH";
 
     public const string RedirectUri = "http://localhost:8082/callback";
 
@@ -24,6 +29,8 @@ public static class JiraOAuthConfiguration
         "read:jira-user",
         "offline_access"
     };
+
+    public static bool IsPlaceholderClientId(string clientId) => clientId == PlaceholderClientId;
 
     public static string BuildApiBaseUrl(string cloudId)
     {

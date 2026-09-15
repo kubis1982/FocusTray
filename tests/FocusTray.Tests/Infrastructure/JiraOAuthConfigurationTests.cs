@@ -36,4 +36,16 @@ public class JiraOAuthConfigurationTests
         url.Should().Contain("response_type=code");
         url.Should().Contain(Uri.EscapeDataString(JiraOAuthConfiguration.RedirectUri));
     }
+
+    [Fact]
+    public void Should_DetectPlaceholder_When_GivenThePlaceholderClientIdValue()
+    {
+        JiraOAuthConfiguration.IsPlaceholderClientId(JiraOAuthConfiguration.PlaceholderClientId).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Should_NotDetectPlaceholder_When_GivenARealClientId()
+    {
+        JiraOAuthConfiguration.IsPlaceholderClientId("some-real-client-id").Should().BeFalse();
+    }
 }

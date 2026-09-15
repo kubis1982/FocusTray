@@ -53,25 +53,12 @@ public class JiraAuthServiceTests : IDisposable
         _mockCredentialService.Verify(x => x.DeleteCredentials(It.IsAny<string>()), Times.Never);
     }
 
-    [Fact]
-    public void Should_NotDeleteLegacyCredentials_When_ClientIdIsStillPlaceholder()
-    {
-        _mockCredentialService.Setup(x => x.HasStoredCredentials("FocusTray_Jira")).Returns(true);
-
-        _ = CreateService();
-
-        _mockCredentialService.Verify(x => x.DeleteCredentials(It.IsAny<string>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task Should_ReturnFalse_When_LoginAsyncCalledWithPlaceholderClientId()
-    {
-        var service = CreateService();
-
-        var result = await service.LoginAsync();
-
-        result.Should().BeFalse();
-    }
+    // NOTE: the placeholder-ClientId guard (RemoveLegacyBasicAuthCredentials skipping deletion,
+    // LoginAsync failing fast) is exercised as a pure predicate in
+    // JiraOAuthConfigurationTests.Should_DetectPlaceholder_When_GivenThePlaceholderClientIdValue,
+    // since JiraOAuthConfiguration.ClientId is a compile-time const and this environment now
+    // has a real, registered Atlassian Client ID configured (so the guard's "placeholder"
+    // branch is not reachable live in this build to assert against here).
 
     [Fact]
     public async Task Should_ReturnFalse_When_TryAutoLoginWithNoStoredCache()

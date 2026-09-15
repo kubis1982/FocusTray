@@ -57,7 +57,7 @@ public class JiraAuthService : IJiraAuthService
     {
         try
         {
-            if (JiraOAuthConfiguration.ClientId == "REPLACE_WITH_ATLASSIAN_OAUTH_CLIENT_ID")
+            if (JiraOAuthConfiguration.IsPlaceholderClientId(JiraOAuthConfiguration.ClientId))
             {
                 _logger.LogError("JIRA OAuth2 client ID is not configured. Register an OAuth 2.0 (3LO) app in the Atlassian Developer Console and set JiraOAuthConfiguration.ClientId (see docs/JIRA_INTEGRATION.md).");
                 return false;
@@ -316,7 +316,7 @@ public class JiraAuthService : IJiraAuthService
 
     private void RemoveLegacyBasicAuthCredentials()
     {
-        if (JiraOAuthConfiguration.ClientId == "REPLACE_WITH_ATLASSIAN_OAUTH_CLIENT_ID")
+        if (JiraOAuthConfiguration.IsPlaceholderClientId(JiraOAuthConfiguration.ClientId))
         {
             _logger.LogWarning("JIRA OAuth2 client ID is not configured yet; keeping legacy Basic Auth credentials until OAuth2 is set up.");
             return;
