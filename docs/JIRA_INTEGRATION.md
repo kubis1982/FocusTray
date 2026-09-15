@@ -46,6 +46,44 @@ own app registration:
   - Only bugs: `assignee = currentUser() AND type = Bug AND status != Done`
   - Specific project: `project = MYPROJECT AND assignee = currentUser()`
 
+### Step 3: Using JIRA Integration
+
+#### Starting a Session with JIRA
+
+1. Right-click tray icon → **"Start Focus Session"**
+2. Check **"Use JIRA issue"** checkbox
+3. Click **"Refresh Issues"** if the list is empty
+4. Select an issue from the dropdown
+   - Format shown: `PROJ-123: Issue summary`
+   - Issues are sorted by most recently updated
+5. Set duration (optional - defaults to 25 minutes)
+6. Click **"Start"**
+
+#### Starting a Session WITHOUT JIRA
+
+1. Right-click tray icon → **"Start Focus Session"**
+2. Leave **"Use JIRA issue"** unchecked
+3. Enter a manual task description
+4. Click **"Start"**
+
+Both methods work independently - you can mix and match as needed.
+
+#### Logging Time to JIRA
+
+When a JIRA-linked session completes:
+
+1. **Automatic notification** appears
+2. Message: "Log 25 minutes to JIRA-123?"
+3. Click **"Yes"** to create worklog entry
+4. Click **"No"** to skip
+
+**What gets logged:**
+- **Time spent**: Session duration (e.g., "25 minutes")
+- **Comment**: Session description (e.g., "[PROJ-123] Fix authentication bug")
+- **Started**: Timestamp when the session began (auto-calculated)
+
+The worklog appears in JIRA immediately under the issue's "Work log" tab.
+
 ## Configuration Details
 
 ### Settings File Location
