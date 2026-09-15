@@ -19,7 +19,8 @@ public class JiraCallbackListener
 {
     public async Task<JiraCallbackResult> WaitForCallbackAsync(string redirectUri, CancellationToken cancellationToken)
     {
-        var prefix = redirectUri.EndsWith('/') ? redirectUri : redirectUri + "/";
+        var parsedRedirectUri = new Uri(redirectUri);
+        var prefix = $"{parsedRedirectUri.Scheme}://{parsedRedirectUri.Authority}/";
 
         using var listener = new HttpListener();
         listener.Prefixes.Add(prefix);
