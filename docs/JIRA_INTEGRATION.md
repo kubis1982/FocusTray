@@ -15,83 +15,36 @@ FocusTray integrates with Atlassian Cloud JIRA to automatically track time spent
 
 ## Setup Instructions
 
-### Step 1: Generate JIRA API Token
+### Step 1: Register a JIRA OAuth 2.0 (3LO) app (one-time, per fork/install)
 
-1. Log in to your Atlassian account
-2. Visit [API Token Management](https://id.atlassian.com/manage-profile/security/api-tokens)
-3. Click **"Create API token"**
-4. Name it descriptively (e.g., "FocusTray Integration")
-5. Click **"Create"**
-6. **Copy the token immediately** (it won't be shown again)
+FocusTray authenticates to JIRA Cloud using OAuth 2.0 (3LO) with PKCE, the same
+browser-based sign-in style used for Microsoft Teams. If you're running an
+official FocusTray build, this is already configured — skip to Step 2.
 
-### Step 2: Configure FocusTray
+If you're building FocusTray from source, you (or your organization) need your
+own app registration:
+
+1. Go to the [Atlassian Developer Console](https://developer.atlassian.com/console/myapps)
+2. Create a new app → **OAuth 2.0 (3LO)** integration, **public client** (no client secret)
+3. Add these API scopes: `read:jira-work`, `write:jira-work`, `read:jira-user`, `offline_access`
+4. Set the **Callback URL** to `http://localhost:8082/callback`
+5. Copy the **Client ID** and set it as `JiraOAuthConfiguration.ClientId` in
+   `src/FocusTray.Infrastructure/Jira/JiraOAuthConfiguration.cs`
+
+### Step 2: Connect FocusTray to JIRA
 
 1. Right-click the FocusTray system tray icon
-2. Select **"JIRA Settings"** from the context menu
-3. Fill in the configuration form:
+2. Select **"JIRA Settings"** → **"Login to JIRA"**
+3. Click **"Sign in with Atlassian"** — your browser opens Atlassian's login page
+4. Log in and approve access
+5. If your account has access to more than one JIRA site, choose which one to connect
+6. FocusTray shows "Successfully signed in to JIRA as \<your name\>!"
 
-   **Company Name**:
-   - Your Atlassian company identifier only
-   - Format: `yourcompany` (for yourcompany.atlassian.net)
-   - Do NOT include `.atlassian.net` or `https://`
-   - Example: If your JIRA URL is `https://acmecorp.atlassian.net`, enter `acmecorp`
-   
-   **Email**:
-   - Your Atlassian account email
-   - Must match the account that generated the API token
-   
-   **API Token**:
-   - Paste the token you generated in Step 1
-   - This is NOT your Atlassian password
-   
-   **JQL Filter** (Optional):
-   - Default: `assignee = currentUser() AND statusCategory != Done`
-   - Customize to show specific issues
-   - Examples:
-     - Only bugs: `assignee = currentUser() AND type = Bug AND status != Done`
-     - Specific project: `project = MYPROJECT AND assignee = currentUser()`
-     - Recent issues: `assignee = currentUser() AND updated >= -7d ORDER BY updated DESC`
-
-4. Click **"Test Connection"** to verify credentials
-5. If successful, click **"Save"**
-
-### Step 3: Using JIRA Integration
-
-#### Starting a Session with JIRA
-
-1. Right-click tray icon → **"Start Focus Session"**
-2. Check **"Use JIRA issue"** checkbox
-3. Click **"Refresh Issues"** if the list is empty
-4. Select an issue from the dropdown
-   - Format shown: `PROJ-123: Issue summary`
-   - Issues are sorted by most recently updated
-5. Set duration (optional - defaults to 25 minutes)
-6. Click **"Start"**
-
-#### Starting a Session WITHOUT JIRA
-
-1. Right-click tray icon → **"Start Focus Session"**
-2. Leave **"Use JIRA issue"** unchecked
-3. Enter a manual task description
-4. Click **"Start"**
-
-Both methods work independently - you can mix and match as needed.
-
-#### Logging Time to JIRA
-
-When a JIRA-linked session completes:
-
-1. **Automatic notification** appears
-2. Message: "Log 25 minutes to JIRA-123?"
-3. Click **"Yes"** to create worklog entry
-4. Click **"No"** to skip
-
-**What gets logged:**
-- **Time spent**: Session duration (e.g., "25 minutes")
-- **Comment**: Session description (e.g., "[PROJ-123] Fix authentication bug")
-- **Started**: Timestamp when the session began (auto-calculated)
-
-The worklog appears in JIRA immediately under the issue's "Work log" tab.
+**JQL Filter** (optional, configured separately via **"JIRA Advanced Settings"**):
+- Default: `assignee = currentUser() AND statusCategory != Done`
+- Customize to show specific issues, e.g.:
+  - Only bugs: `assignee = currentUser() AND type = Bug AND status != Done`
+  - Specific project: `project = MYPROJECT AND assignee = currentUser()`
 
 ## Configuration Details
 
@@ -109,13 +62,14 @@ Example: `C:\Users\YourName\AppData\Local\FocusTray\settings.json`
 ```json
 {
   "JiraConfiguration": {
-    "Company": "yourcompany",
     "JqlFilter": "assignee = currentUser() AND statusCategory != Done"
   }
 }
 ```
 
-**Note**: Authentication credentials (email and API token) are stored securely in **Windows Credential Manager**, not in the settings file. This provides better security by using Windows' encrypted credential storage.
+**Note**: OAuth2 tokens (access token, refresh token, expiry, and the connected
+JIRA site) are stored encrypted (Windows DPAPI) in
+`%LocalAppData%\FocusTray\jira_token_cache.dat`, never in `settings.json`.
 
 ### Default JQL Filter Explained
 
@@ -230,57 +184,34 @@ https://support.atlassian.com/jira-service-management-cloud/docs/use-advanced-se
 
 ## Security Best Practices
 
-1. **Never share your API token**
-   - Treat it like a password
-   - Revoke immediately if compromised
-
-2. **Never commit settings.json to version control**
-   - Add to .gitignore if you fork FocusTray
-   - Delete from repository history if accidentally committed
-
-3. **Rotate API tokens periodically**
-   - Generate new tokens every 90-180 days
-   - Revoke old tokens after replacement
-
-4. **Use dedicated API tokens**
-   - Create separate tokens for different applications
-   - Makes revocation easier if one app is compromised
-
-5. **Monitor token usage**
-   - Atlassian shows when tokens were last used
-   - Check https://id.atlassian.com/manage-profile/security/api-tokens
+1. **Tokens are encrypted at rest** using Windows DPAPI, scoped to your Windows
+   user account — the same mechanism used for Microsoft Teams tokens.
+2. **Refresh tokens rotate**: JIRA issues a new refresh token on every use;
+   FocusTray always persists the newest one and discards the old.
+3. **Revoke access anytime** from
+   [your Atlassian account's connected apps](https://id.atlassian.com/manage-profile/security) —
+   FocusTray will require you to sign in again on its next JIRA request.
+4. **Never commit `settings.json` or the token cache file to version control.**
 
 ## API Endpoints Used
 
-FocusTray uses these JIRA Cloud REST API endpoints:
+FocusTray uses these JIRA Cloud REST API v2 endpoints, proxied through
+Atlassian's OAuth 2.0 (3LO) API gateway (`https://api.atlassian.com/ex/jira/{cloudId}/...`):
 
-1. **Connection Test**
-   ```
-   GET /rest/api/3/myself
-   ```
-   Returns current user information to verify credentials.
+1. **Connection Test**: `GET /rest/api/2/myself`
+2. **Get Issues**: `GET /rest/api/2/search/jql?jql={filter}&fields=key,summary,issuetype,status&maxResults=100`
+3. **Add Worklog**: `POST /rest/api/2/issue/{issueKey}/worklog`
 
-2. **Get Issues**
-   ```
-   GET /rest/api/3/search?jql={filter}&fields=key,summary,issuetype,status&maxResults=100
-   ```
-   Fetches issues matching the JQL filter (max 100 results).
-
-3. **Add Worklog**
-   ```
-   POST /rest/api/3/issue/{issueKey}/worklog
-   ```
-   Creates a worklog entry with time spent and comment.
-
-**Authentication**: Basic Auth with Base64(`email:apiToken`)
+**Authentication**: OAuth 2.0 (3LO), Authorization Code + PKCE, `Authorization: Bearer <access_token>`.
 
 ## FAQ
 
 **Q: Does this work with JIRA Server/Data Center?**  
 A: No, only Atlassian Cloud is supported. Server/Data Center use different API endpoints.
 
-**Q: Can I use my Atlassian password instead of an API token?**  
-A: No, Atlassian Cloud requires API tokens for security. Passwords are not supported.
+**Q: Can I use my Atlassian password or an API token instead of signing in with OAuth2?**
+A: No. FocusTray only supports OAuth 2.0 sign-in for JIRA now — this is more
+secure than API tokens and matches how Microsoft Teams already authenticates.
 
 **Q: How many issues can I select from?**  
 A: Up to 100 issues per query. Refine your JQL filter if you have more.
@@ -288,14 +219,42 @@ A: Up to 100 issues per query. Refine your JQL filter if you have more.
 **Q: Can I edit worklogs after creation?**  
 A: Not from FocusTray - edit directly in JIRA if needed.
 
-**Q: Does this support multiple JIRA accounts?**  
-A: No, only one JIRA account can be configured at a time.
+**Q: Does this support multiple JIRA sites?**
+A: Yes — if your Atlassian account has access to more than one JIRA Cloud site,
+FocusTray asks you to pick one when you sign in. To switch sites later, log out
+and log back in.
 
 **Q: Can I disable JIRA integration after enabling it?**  
 A: Yes, open JIRA Settings and uncheck "Enable JIRA Integration", then save.
 
 **Q: Will my sessions still work if JIRA is down?**  
 A: Yes! Sessions work independently. Only the worklog creation will fail (you can log time manually in JIRA later).
+
+## Manual OAuth2 Test Procedure
+
+The interactive login flow (browser + local loopback listener) can't be
+automated in CI, the same way Microsoft Teams' login flow can't. To verify it
+manually after changing JIRA auth code:
+
+1. Run FocusTray from source, open **JIRA Settings → Login to JIRA**
+2. Click **"Sign in with Atlassian"** — confirm the system browser opens
+3. Approve access — confirm the browser tab shows a success page and FocusTray
+   shows "Successfully signed in to JIRA as ..."
+4. If your account has multiple sites, confirm the site picker appears and the
+   chosen site is the one FocusTray actually queries
+5. Close FocusTray, reopen it — confirm auto-login succeeds silently (no browser popup)
+6. Use **JIRA Advanced Settings → Test Query** to confirm issues load
+7. Complete a JIRA-linked focus session and confirm the worklog is created
+8. Click **Logout** — confirm `%LocalAppData%\FocusTray\jira_token_cache.dat` is deleted
+   and the next JIRA action prompts a fresh login
+
+To populate `JIRA_ACCESS_TOKEN`/`JIRA_CLOUD_ID` for the automated integration
+tests (`tests/FocusTray.IntegrationTests`), sign in once via the steps above,
+then read the cached access token and cloud ID from
+`%LocalAppData%\FocusTray\jira_token_cache.dat` (decrypt with the same DPAPI
+call `JiraTokenCacheHelper.Load()` uses) and export them as environment
+variables before running `dotnet test tests/FocusTray.IntegrationTests`. Access
+tokens are short-lived, so re-export before each run.
 
 ## Support
 
