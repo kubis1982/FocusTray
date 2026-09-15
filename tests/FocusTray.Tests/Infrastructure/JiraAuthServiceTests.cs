@@ -44,16 +44,6 @@ public class JiraAuthServiceTests : IDisposable
     }
 
     [Fact]
-    public void Should_RemoveLegacyCredentials_When_ConstructedWithLegacyBasicAuthStored()
-    {
-        _mockCredentialService.Setup(x => x.HasStoredCredentials("FocusTray_Jira")).Returns(true);
-
-        _ = CreateService();
-
-        _mockCredentialService.Verify(x => x.DeleteCredentials("FocusTray_Jira"), Times.Once);
-    }
-
-    [Fact]
     public void Should_NotDeleteCredentials_When_NoLegacyCredentialsStored()
     {
         _mockCredentialService.Setup(x => x.HasStoredCredentials("FocusTray_Jira")).Returns(false);
@@ -61,6 +51,26 @@ public class JiraAuthServiceTests : IDisposable
         _ = CreateService();
 
         _mockCredentialService.Verify(x => x.DeleteCredentials(It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public void Should_NotDeleteLegacyCredentials_When_ClientIdIsStillPlaceholder()
+    {
+        _mockCredentialService.Setup(x => x.HasStoredCredentials("FocusTray_Jira")).Returns(true);
+
+        _ = CreateService();
+
+        _mockCredentialService.Verify(x => x.DeleteCredentials(It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Should_ReturnFalse_When_LoginAsyncCalledWithPlaceholderClientId()
+    {
+        var service = CreateService();
+
+        var result = await service.LoginAsync();
+
+        result.Should().BeFalse();
     }
 
     [Fact]

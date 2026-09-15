@@ -23,6 +23,7 @@ public class JiraAuthService : IJiraAuthService
     private readonly ILogger<JiraAuthService> _logger;
     private readonly JiraTokenCacheHelper _tokenCacheHelper;
     private readonly JiraCallbackListener _callbackListener;
+    private readonly SemaphoreSlim _refreshLock = new(1, 1);
 
     private JiraTokenCacheData? _cache;
     private bool _isLoggedIn;
@@ -56,6 +57,12 @@ public class JiraAuthService : IJiraAuthService
     {
         try
         {
+            if (JiraOAuthConfiguration.ClientId == "REPLACE_WITH_ATLASSIAN_OAUTH_CLIENT_ID")
+            {
+                _logger.LogError("JIRA OAuth2 client ID is not configured. Register an OAuth 2.0 (3LO) app in the Atlassian Developer Console and set JiraOAuthConfiguration.ClientId (see docs/JIRA_INTEGRATION.md).");
+                return false;
+            }
+
             var codeVerifier = PkceGenerator.GenerateCodeVerifier();
             var codeChallenge = PkceGenerator.GenerateCodeChallenge(codeVerifier);
             var state = PkceGenerator.GenerateState();
@@ -135,6 +142,11 @@ public class JiraAuthService : IJiraAuthService
 
             return true;
         }
+        catch (System.Net.HttpListenerException ex)
+        {
+            _logger.LogError(ex, "JIRA login failed: could not start local listener on {RedirectUri} (the port may already be in use by another application)", JiraOAuthConfiguration.RedirectUri);
+            return false;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during JIRA login");
@@ -200,8 +212,19 @@ public class JiraAuthService : IJiraAuthService
             return _cache.AccessToken;
         }
 
+        await _refreshLock.WaitAsync();
         try
         {
+            if (_cache == null)
+            {
+                return null;
+            }
+
+            if (_cache.ExpiresAtUtc > DateTimeOffset.UtcNow.AddMinutes(5))
+            {
+                return _cache.AccessToken;
+            }
+
             var response = await _httpClient.RequestRefreshTokenAsync(new RefreshTokenRequest
             {
                 Address = JiraOAuthConfiguration.TokenEndpoint,
@@ -230,6 +253,10 @@ public class JiraAuthService : IJiraAuthService
         {
             _logger.LogError(ex, "Error refreshing JIRA access token");
             return null;
+        }
+        finally
+        {
+            _refreshLock.Release();
         }
     }
 
@@ -289,6 +316,12 @@ public class JiraAuthService : IJiraAuthService
 
     private void RemoveLegacyBasicAuthCredentials()
     {
+        if (JiraOAuthConfiguration.ClientId == "REPLACE_WITH_ATLASSIAN_OAUTH_CLIENT_ID")
+        {
+            _logger.LogWarning("JIRA OAuth2 client ID is not configured yet; keeping legacy Basic Auth credentials until OAuth2 is set up.");
+            return;
+        }
+
         if (_credentialService.HasStoredCredentials(LegacyCredentialTarget))
         {
             _logger.LogInformation("Removing legacy JIRA Basic Auth credentials; re-login via OAuth2 is required");
