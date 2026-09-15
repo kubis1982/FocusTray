@@ -86,22 +86,19 @@ dotnet publish src/FocusTray/FocusTray.csproj -c Release
 
 FocusTray can automatically track time in JIRA Atlassian Cloud:
 
-1. **Generate a JIRA API Token**:
-   - Visit https://id.atlassian.com/manage-profile/security/api-tokens
-   - Click "Create API token"
-   - Give it a name (e.g., "FocusTray")
-   - Copy the generated token
+1. **Register an OAuth 2.0 (3LO) app** (one-time, only if building from source — official builds already have this configured):
+   - Go to https://developer.atlassian.com/console/myapps
+   - Create app → **OAuth 2.0 (3LO)**, public client (no client secret)
+   - Add scopes: `read:jira-work`, `write:jira-work`, `read:jira-user`, `offline_access`
+   - Set Callback URL to `http://localhost:8082/callback`
+   - Copy the Client ID into `JiraOAuthConfiguration.ClientId`
 
-2. **Configure JIRA in FocusTray**:
+2. **Connect FocusTray to JIRA**:
    - Right-click the tray icon
-   - Select **"JIRA Settings"**
-   - Enter your JIRA details:
-     - Company Name: Your Atlassian company identifier (e.g., "yourcompany" for yourcompany.atlassian.net)
-     - Email: Your Atlassian account email
-     - API Token: Paste the token you generated
-   - (Optional) Customize JQL filter for issue selection
-   - Click **"Test Connection"** to verify
-   - Click **"Save"**
+   - Select **"JIRA Settings"** → **"Login to JIRA"**
+   - Click **"Sign in with Atlassian"** — a browser window opens
+   - Log in and approve access
+   - (Optional) Customize the JQL filter for issue selection via **"JIRA Advanced Settings"**
 
 3. **Default JQL Filter**: 
    ```
@@ -109,9 +106,9 @@ FocusTray can automatically track time in JIRA Atlassian Cloud:
    ```
    This shows your assigned, incomplete issues sorted by most recently updated.
 
-**⚠️ Security Note**: JIRA credentials are stored locally in:  
-`%LocalApplicationData%\FocusTray\settings.json`  
-Keep this file secure and never commit it to source control.
+**⚠️ Security Note**: OAuth2 tokens are stored encrypted (Windows DPAPI) in:  
+`%LocalApplicationData%\FocusTray\jira_token_cache.dat`  
+Only the JQL filter lives in `settings.json`. Never commit either file to source control.
 
 ### Starting a Focus Session
 
@@ -203,7 +200,7 @@ FocusTray/
 **Infrastructure Layer** (`FocusTray.Infrastructure`)
 - `JiraService`: REST API integration with Atlassian Cloud
 - HTTP-based communication using System.Net.Http.Json
-- Basic Authentication with email + API token
+- OAuth 2.0 (3LO), Authorization Code + PKCE, Bearer token authentication
 - Configuration model with validation
 
 ## Technology Stack
@@ -243,11 +240,10 @@ dotnet test FocusTray.slnx
 # Run unit tests only (no credentials needed)
 dotnet test tests/FocusTray.Tests/FocusTray.Tests.csproj
 
-# Run integration tests (requires JIRA credentials)
+# Run integration tests (requires a JIRA OAuth2 access token)
 # Set environment variables first:
-# $env:JIRA_COMPANY = "yourcompany"  # Company name (e.g., for yourcompany.atlassian.net)
-# $env:JIRA_EMAIL = "your.email@company.com"
-# $env:JIRA_API_TOKEN = "your-api-token"
+# $env:JIRA_ACCESS_TOKEN = "your-access-token"  # obtained via a real interactive login
+# $env:JIRA_CLOUD_ID = "your-cloud-id"
 dotnet test tests/FocusTray.IntegrationTests/FocusTray.IntegrationTests.csproj
 
 # Run tests with coverage
@@ -292,19 +288,18 @@ When JIRA integration is enabled, the settings file contains:
 ```json
 {
   "JiraConfiguration": {
-    "Company": "yourcompany",
     "JqlFilter": "assignee = currentUser() AND statusCategory != Done"
   }
 }
 ```
 
-**Note**: Authentication credentials (email and API token) are stored securely in Windows Credential Manager, not in the settings file.
+**Note**: OAuth2 tokens are stored encrypted (Windows DPAPI) in `%LocalApplicationData%\FocusTray\jira_token_cache.dat`, never in the settings file.
 
-**⚠️ Security Note**: 
-- JIRA company name and JQL filter are stored in: `%LocalApplicationData%\FocusTray\settings.json`
-- Authentication credentials (email and API token) are stored securely in **Windows Credential Manager**
-- Never commit `settings.json` to source control
-- Credentials are encrypted and managed by Windows
+**⚠️ Security Note**:
+- Only the JQL filter is stored in: `%LocalApplicationData%\FocusTray\settings.json`
+- OAuth2 tokens are stored encrypted (Windows DPAPI) in `%LocalApplicationData%\FocusTray\jira_token_cache.dat`
+- Never commit `settings.json` or the token cache file to source control
+- Revoke access anytime from https://id.atlassian.com/manage-profile/security
 
 ## License
 

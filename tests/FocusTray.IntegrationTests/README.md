@@ -8,33 +8,29 @@ JIRA integration tests require real credentials. They are **skipped by default**
 
 ### Setup
 
-1. Create a JIRA API token:
-   - Go to https://id.atlassian.com/manage-profile/security/api-tokens
-   - Click "Create API token"
-   - Give it a name (e.g., "FocusTray Integration Tests")
-   - Copy the generated token
+1. Obtain a JIRA OAuth2 access token and cloud ID via a real interactive login:
+   - Follow the manual test procedure in `docs/JIRA_INTEGRATION.md` to perform an Authorization Code + PKCE login against Atlassian (this requires an OAuth 2.0 (3LO) app registered in the Atlassian Developer Console — see the main `README.md`)
+   - Copy the resulting access token and the JIRA site's cloud ID (the `id` returned from the accessible-resources endpoint)
+   - Access tokens are short-lived; repeat the login to get a fresh one if tests start failing with 401s
 
 2. Set environment variables:
 
 **Windows (PowerShell):**
 ```powershell
-$env:JIRA_COMPANY = "yourcompany"  # Company name only (e.g., for yourcompany.atlassian.net)
-$env:JIRA_EMAIL = "your.email@company.com"
-$env:JIRA_API_TOKEN = "your-api-token-here"
+$env:JIRA_ACCESS_TOKEN = "your-access-token"
+$env:JIRA_CLOUD_ID = "your-cloud-id"
 ```
 
 **Windows (Command Prompt):**
 ```cmd
-set JIRA_COMPANY=yourcompany
-set JIRA_EMAIL=your.email@company.com
-set JIRA_API_TOKEN=your-api-token-here
+set JIRA_ACCESS_TOKEN=your-access-token
+set JIRA_CLOUD_ID=your-cloud-id
 ```
 
 **Linux/macOS:**
 ```bash
-export JIRA_COMPANY="yourcompany"
-export JIRA_EMAIL="your.email@company.com"
-export JIRA_API_TOKEN="your-api-token-here"
+export JIRA_ACCESS_TOKEN="your-access-token"
+export JIRA_CLOUD_ID="your-cloud-id"
 ```
 
 3. Run tests:
@@ -55,4 +51,4 @@ dotnet test
 
 - Use environment variables only
 - Do not hardcode credentials in test files
-- Keep your API token secure
+- Keep your access token secure

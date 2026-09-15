@@ -14,20 +14,17 @@ namespace FocusTray.Infrastructure.Jira;
 public class JiraService : IJiraService
 {
     private readonly IJiraAuthService _authService;
-    private readonly ICredentialService _credentialService;
     private readonly JiraConfiguration _configuration;
     private readonly HttpClient _httpClient;
     private readonly ILogger<JiraService> _logger;
 
     public JiraService(
         IJiraAuthService authService,
-        ICredentialService credentialService,
         JiraConfiguration configuration,
         HttpClient httpClient,
         ILogger<JiraService> logger)
     {
         _authService = authService ?? throw new ArgumentNullException(nameof(authService));
-        _credentialService = credentialService ?? throw new ArgumentNullException(nameof(credentialService));
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -51,7 +48,7 @@ public class JiraService : IJiraService
                 return false;
             }
 
-            _logger.LogInformation("Testing JIRA connection to {Company}", _authService.CurrentCompany);
+            _logger.LogInformation("Testing JIRA connection to {Site}", _authService.CurrentSiteUrl);
 
             var user = await jiraClient.Rest.Api.Two.Myself.GetAsync();
 
@@ -157,10 +154,10 @@ public class JiraService : IJiraService
             }
 
             _logger.LogInformation(
-                "Adding worklog to {IssueKey}: {Seconds}s on company {Company}",
+                "Adding worklog to {IssueKey}: {Seconds}s on site {Site}",
                 worklog.IssueKey,
                 worklog.TimeSpentSeconds,
-                _authService.CurrentCompany);
+                _authService.CurrentSiteUrl);
 
             var worklogRequest = new Worklog
             {
@@ -186,22 +183,18 @@ public class JiraService : IJiraService
     {
         try
         {
-            var credentials = _credentialService.LoadCredentials("FocusTray_Jira");
-            if (credentials == null)
+            var cloudId = _authService.CurrentCloudId;
+            if (string.IsNullOrWhiteSpace(cloudId))
             {
-                _logger.LogWarning("Cannot create JIRA client: credentials not found");
+                _logger.LogWarning("Cannot create JIRA client: not logged in (no cloud ID)");
                 return null;
             }
 
-            var company = _authService.CurrentCompany;
-            if (string.IsNullOrWhiteSpace(company))
-            {
-                _logger.LogWarning("Cannot create JIRA client: company not configured");
-                return null;
-            }
+            var baseUrl = JiraOAuthConfiguration.BuildApiBaseUrl(cloudId);
+            var authProvider = new JiraBearerAuthProvider(() => _authService.GetAccessTokenAsync());
+            var requestAdapter = HttpClientRequestAdapterFactory.Create(baseUrl, authProvider, _httpClient);
 
-            var basicAuthProvider = new BasicAuthProvider(credentials.Value.Username, credentials.Value.Password);
-            return JiraRestClient.Create(company, basicAuthProvider, _httpClient);
+            return new JiraRestClient(requestAdapter);
         }
         catch (Exception ex)
         {

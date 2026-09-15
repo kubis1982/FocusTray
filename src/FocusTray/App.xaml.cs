@@ -44,7 +44,11 @@ public partial class App : Application
             var settingsService = provider.GetRequiredService<SettingsService>();
             return settingsService.JiraConfiguration;
         });
-        
+
+        // Add JIRA site picker prompt (WPF implementation of a Core interface, so
+        // FocusTray.Infrastructure never depends on WPF)
+        services.AddSingleton<IJiraSitePickerPrompt, Services.WpfJiraSitePickerPrompt>();
+
         // Add JIRA authentication service
         services.AddSingleton<IJiraAuthService, JiraAuthService>();
         

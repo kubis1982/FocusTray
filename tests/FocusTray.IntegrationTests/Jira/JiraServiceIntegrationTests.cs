@@ -8,12 +8,12 @@ using Xunit;
 namespace FocusTray.IntegrationTests.Jira;
 
 /// <summary>
-/// Integration tests for JiraService.
-/// These tests require real JIRA credentials via environment variables:
-/// - JIRA_BASE_URL (e.g., https://yourcompany.atlassian.net)
-/// - JIRA_EMAIL (your Atlassian account email)
-/// - JIRA_API_TOKEN (API token from https://id.atlassian.com/manage-profile/security/api-tokens)
-/// 
+/// Integration tests for JiraService against a real JIRA Cloud site.
+/// These tests require a JIRA OAuth2 access token obtained via the real interactive
+/// login flow (see docs/JIRA_INTEGRATION.md "Manual OAuth2 test procedure"), exposed via:
+/// - JIRA_ACCESS_TOKEN (a currently-valid OAuth2 access token)
+/// - JIRA_CLOUD_ID (the Atlassian cloudId for the target site)
+///
 /// Tests are skipped if environment variables are not set.
 /// </summary>
 public class JiraServiceIntegrationTests : IDisposable
@@ -27,53 +27,40 @@ public class JiraServiceIntegrationTests : IDisposable
     {
         _httpClient = new HttpClient();
 
-        var company = Environment.GetEnvironmentVariable("JIRA_BASE_URL");
-        var email = Environment.GetEnvironmentVariable("JIRA_EMAIL");
-        var apiToken = Environment.GetEnvironmentVariable("JIRA_API_TOKEN");
+        var accessToken = Environment.GetEnvironmentVariable("JIRA_ACCESS_TOKEN");
+        var cloudId = Environment.GetEnvironmentVariable("JIRA_CLOUD_ID");
 
-        if (string.IsNullOrWhiteSpace(company) || 
-            string.IsNullOrWhiteSpace(email) || 
-            string.IsNullOrWhiteSpace(apiToken))
+        if (string.IsNullOrWhiteSpace(accessToken) || string.IsNullOrWhiteSpace(cloudId))
         {
             _isConfigured = false;
-            _skipReason = "JIRA environment variables not configured. Set JIRA_BASE_URL, JIRA_EMAIL, and JIRA_API_TOKEN to run integration tests.";
+            _skipReason = "JIRA environment variables not configured. Set JIRA_ACCESS_TOKEN and JIRA_CLOUD_ID to run integration tests.";
             return;
         }
 
         _isConfigured = true;
         _skipReason = string.Empty;
 
-        // Create simple test implementations
-        var authService = new TestJiraAuthService(company, email, apiToken);
-        var credentialService = new TestCredentialService(email, apiToken);
+        var authService = new TestJiraAuthService(accessToken, cloudId);
 
         var configuration = new JiraConfiguration
         {
-            Company = company,
             JqlFilter = "assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC"
         };
 
         var logger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Warning))
             .CreateLogger<JiraService>();
 
-        _jiraService = new JiraService(
-            authService,
-            credentialService,
-            configuration,
-            _httpClient,
-            logger);
+        _jiraService = new JiraService(authService, configuration, _httpClient, logger);
     }
 
     [SkippableFact]
-    public async Task Should_ConnectToJira_When_CredentialsAreValid()
+    public async Task Should_ConnectToJira_When_AccessTokenIsValid()
     {
         Skip.IfNot(_isConfigured, _skipReason);
 
-        // Act
         var result = await _jiraService!.TestConnectionAsync();
 
-        // Assert
-        result.Should().BeTrue("connection test should succeed with valid credentials");
+        result.Should().BeTrue("connection test should succeed with a valid access token");
     }
 
     [SkippableFact]
@@ -81,12 +68,9 @@ public class JiraServiceIntegrationTests : IDisposable
     {
         Skip.IfNot(_isConfigured, _skipReason);
 
-        // Act
         var issues = await _jiraService!.GetAssignedIssuesAsync();
 
-        // Assert
         issues.Should().NotBeNull("service should return a list");
-        // Note: May be empty if user has no assigned issues
         if (issues.Count > 0)
         {
             var firstIssue = issues[0];
@@ -101,24 +85,21 @@ public class JiraServiceIntegrationTests : IDisposable
     {
         Skip.IfNot(_isConfigured, _skipReason);
 
-        // First, get an issue to add worklog to
         var issues = await _jiraService!.GetAssignedIssuesAsync();
-        
+
         Skip.If(issues.Count == 0, "No assigned issues available to test worklog creation");
 
         var testIssue = issues[0];
         var worklog = new JiraWorklog
         {
             IssueKey = testIssue.Key,
-            TimeSpentSeconds = 300, // 5 minutes
+            TimeSpentSeconds = 300,
             Comment = "FocusTray Integration Test - Auto-generated worklog entry",
-            Started = DateTime.UtcNow.AddMinutes(-5) // Started 5 minutes ago
+            Started = DateTime.UtcNow.AddMinutes(-5)
         };
 
-        // Act
         var result = await _jiraService.AddWorklogAsync(worklog);
 
-        // Assert
         result.Should().BeTrue($"worklog should be added successfully to issue {testIssue.Key}");
     }
 
@@ -135,10 +116,8 @@ public class JiraServiceIntegrationTests : IDisposable
             Started = DateTime.UtcNow
         };
 
-        // Act
         var result = await _jiraService!.AddWorklogAsync(worklog);
 
-        // Assert
         result.Should().BeFalse("worklog should fail for non-existent issue");
     }
 
@@ -147,10 +126,8 @@ public class JiraServiceIntegrationTests : IDisposable
     {
         Skip.IfNot(_isConfigured, _skipReason);
 
-        // Act
         var issues = await _jiraService!.GetAssignedIssuesAsync();
 
-        // Assert
         issues.Should().NotBeNull();
         issues.Count.Should().BeLessThanOrEqualTo(100, "service should respect maxResults=100 limit");
     }
@@ -160,26 +137,19 @@ public class JiraServiceIntegrationTests : IDisposable
         _httpClient?.Dispose();
     }
 
-    // Test helper classes
-    private class TestJiraAuthService(string company, string email, string apiToken) : IJiraAuthService
+    private class TestJiraAuthService(string accessToken, string cloudId) : IJiraAuthService
     {
         public bool IsLoggedIn => true;
-        public string? CurrentUsername => email;
-        public string? CurrentUserEmail => email;
-        public string? CurrentCompany => company;
+        public string? CurrentUsername => "Integration Test User";
+        public string? CurrentUserEmail => null;
+        public string? CurrentSiteUrl => null;
+        public string? CurrentCloudId => cloudId;
         public event EventHandler<AuthStateChangedEventArgs>? AuthStateChanged;
 
-        public Task<bool> LoginAsync(string company, string email, string apiToken) => Task.FromResult(true);
+        public Task<bool> LoginAsync() => Task.FromResult(true);
         public Task<bool> LogoutAsync() => Task.FromResult(true);
-        public Task<string?> GetCurrentUserAsync() => Task.FromResult<string?>(email);
+        public Task<string?> GetCurrentUserAsync() => Task.FromResult<string?>(CurrentUsername);
         public Task<bool> TryAutoLoginAsync() => Task.FromResult(true);
-    }
-
-    private class TestCredentialService(string email, string apiToken) : ICredentialService
-    {
-        public bool SaveCredentials(string target, string username, string password) => true;
-        public (string Username, string Password)? LoadCredentials(string target) => (email, apiToken);
-        public bool DeleteCredentials(string target) => true;
-        public bool HasStoredCredentials(string target) => true;
+        public Task<string?> GetAccessTokenAsync() => Task.FromResult<string?>(accessToken);
     }
 }
