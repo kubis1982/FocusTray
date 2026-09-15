@@ -137,7 +137,9 @@ public class JiraServiceTests
 
         issues.Should().HaveCount(2);
         issues[0].Key.Should().Be("PROJ-1");
+        issues[0].Summary.Should().Be("First issue");
         issues[1].Key.Should().Be("PROJ-2");
+        issues[1].Summary.Should().Be("Second issue");
     }
 
     [Fact]
