@@ -1,0 +1,80 @@
+<Window x:Class="FocusTray.Views.AboutDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="About FocusTray"
+        Height="Auto"
+        SizeToContent="Height"
+        Width="420"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0"
+                    Orientation="Horizontal"
+                    Margin="0,0,0,15">
+            <Image Source="/Resources/favicon.ico"
+                   Width="32"
+                   Height="32"
+                   Margin="0,0,10,0"/>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="FocusTray"
+                           FontSize="20"
+                           FontWeight="Bold"/>
+                <TextBlock Name="VersionTextBlock"
+                           Foreground="Gray"
+                           FontSize="11"/>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Description -->
+        <TextBlock Grid.Row="1"
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,15">
+            <Run Text="A minimalist Windows system tray application that helps you maintain deep focus during work sessions."/>
+            <LineBreak/>
+            <LineBreak/>
+            <Run Text="Shows session state through the tray icon and toast notifications, tracks work time via JIRA worklogs, and automatically sets your Microsoft Teams status to 'Do Not Disturb' while a session is active."/>
+        </TextBlock>
+
+        <!-- Copyright -->
+        <TextBlock Grid.Row="2"
+                   Name="CopyrightTextBlock"
+                   Foreground="Gray"
+                   FontSize="11"
+                   Margin="0,0,0,15"/>
+
+        <!-- Project link -->
+        <TextBlock Grid.Row="3"
+                   Margin="0,0,0,20">
+            <Hyperlink Name="ProjectLink"
+                       NavigateUri="https://github.com/kubis1982/FocusTray"
+                       RequestNavigate="ProjectLink_RequestNavigate">
+                https://github.com/kubis1982/FocusTray
+            </Hyperlink>
+        </TextBlock>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="4"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button Name="CloseButton"
+                    Content="Close"
+                    Width="100"
+                    Height="35"
+                    Click="Close_Click"
+                    IsDefault="True"
+                    IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>

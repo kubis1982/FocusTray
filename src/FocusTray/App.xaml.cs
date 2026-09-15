@@ -71,6 +71,7 @@ public partial class App : Application
         services.AddTransient<TeamsLoginDialogViewModel>();
         services.AddTransient<Views.TeamsLoginDialog>();
         services.AddTransient<Views.TeamsSettingsDialog>();
+        services.AddTransient<Views.AboutDialog>();
         services.AddTransient<SessionConfigDialogViewModel>();
         services.AddTransient<SessionConfigDialog>();
         services.AddTransient<MainWindow>();

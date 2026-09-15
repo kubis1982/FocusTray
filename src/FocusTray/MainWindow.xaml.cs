@@ -197,6 +197,19 @@ public partial class MainWindow : Window
         }
     }
 
+    private void About_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var aboutDialog = App.Services.GetRequiredService<Views.AboutDialog>();
+            aboutDialog.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            ShowErrorNotification("FocusTray Error", $"Error opening About dialog: {ex.Message}");
+        }
+    }
+
     private void AuthService_AuthStateChanged(object? sender, AuthStateChangedEventArgs e)
     {
         Dispatcher.InvokeAsync(() =>

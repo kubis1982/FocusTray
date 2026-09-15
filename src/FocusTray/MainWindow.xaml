@@ -70,7 +70,11 @@
                                   Visibility="Collapsed"/>
                     </MenuItem>
                     <Separator/>
-                    <MenuItem Header="Exit" 
+                    <MenuItem Header="About"
+                              x:Name="AboutMenuItem"
+                              Click="About_Click"/>
+                    <Separator/>
+                    <MenuItem Header="Exit"
                               Click="Exit_Click"/>
                 </ContextMenu>
             </tb:TaskbarIcon.ContextMenu>
