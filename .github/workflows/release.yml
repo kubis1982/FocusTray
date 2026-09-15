@@ -23,7 +23,12 @@ jobs:
         id: extract_version
         shell: pwsh
         run: |
-          $version = $env:GITHUB_REF -replace '^refs/tags/v',''
+          $ref = $env:GITHUB_REF
+          if ($ref -notmatch '^refs/tags/v\d+\.\d+\.\d+$') {
+            Write-Error "This workflow must run from a 'vX.Y.Z' tag (got '$ref'). Push a tag (git tag vX.Y.Z && git push origin vX.Y.Z) or dispatch this workflow against that tag ref."
+            exit 1
+          }
+          $version = $ref -replace '^refs/tags/v',''
           Write-Output "version=$version" >> $env:GITHUB_OUTPUT
           Write-Host "Version: $version"
 
@@ -114,4 +119,19 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-winget:
+    name: Publish to winget-pkgs
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      # Requires a repo secret WINGET_TOKEN: a classic PAT (scope: public_repo)
+      # belonging to an account that has forked https://github.com/microsoft/winget-pkgs.
+      # See: https://github.com/vedantmgoyal9/winget-releaser
+      - name: Submit manifest update to winget-pkgs
+        uses: vedantmgoyal9/winget-releaser@v2
+        with:
+          identifier: Kubis1982.FocusTray
+          installers-regex: '\.zip$'
+          token: ${{ secrets.WINGET_TOKEN }}
 
