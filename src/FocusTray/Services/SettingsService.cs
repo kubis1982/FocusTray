@@ -8,7 +8,7 @@ namespace FocusTray.Services;
 /// <summary>
 /// Service for managing application settings.
 /// </summary>
-public class SettingsService
+public class SettingsService : ISettingsService
 {
     private readonly string _settingsFilePath;
     private AppSettings? _settings;

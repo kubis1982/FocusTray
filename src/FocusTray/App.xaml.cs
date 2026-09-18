@@ -31,6 +31,7 @@ public partial class App : Application
 
         // Add settings
         services.AddSingleton<SettingsService>();
+        services.AddSingleton<ISettingsService>(provider => provider.GetRequiredService<SettingsService>());
 
         // Add core services
         services.AddSingleton<ITimerService, TimerService>();

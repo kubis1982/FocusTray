@@ -1,15 +1,22 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FocusTray.Core.Services;
+using FocusTray.Infrastructure.Jira;
+using FocusTray.Services;
 
 namespace FocusTray.ViewModels;
 
 /// <summary>
 /// ViewModel for JiraLoginDialog.
 /// </summary>
-public partial class JiraLoginDialogViewModel(IJiraAuthService authService) : ObservableObject
+public partial class JiraLoginDialogViewModel(
+    IJiraAuthService authService,
+    ISettingsService settingsService,
+    JiraConfiguration configuration) : ObservableObject
 {
     private readonly IJiraAuthService _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+    private readonly ISettingsService _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
+    private readonly JiraConfiguration _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
 
     [ObservableProperty]
     private string _company = string.Empty;
@@ -64,6 +71,8 @@ public partial class JiraLoginDialogViewModel(IJiraAuthService authService) : Ob
 
             if (success)
             {
+                _settingsService.SaveJiraConfiguration(_configuration);
+
                 StatusMessage = $"✓ Successfully logged in as {_authService.CurrentUsername}!";
                 IsSuccess = true;
             }
