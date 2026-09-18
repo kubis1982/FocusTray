@@ -71,7 +71,17 @@ public partial class JiraLoginDialogViewModel(
 
             if (success)
             {
-                _settingsService.SaveJiraConfiguration(_configuration);
+                _configuration.Company = Company.Trim();
+
+                try
+                {
+                    _settingsService.SaveJiraConfiguration(_configuration);
+                }
+                catch (Exception)
+                {
+                    // Swallow: a settings-persistence failure must not be reported as a login failure.
+                    // The JIRA login itself already succeeded and credentials are already saved.
+                }
 
                 StatusMessage = $"✓ Successfully logged in as {_authService.CurrentUsername}!";
                 IsSuccess = true;

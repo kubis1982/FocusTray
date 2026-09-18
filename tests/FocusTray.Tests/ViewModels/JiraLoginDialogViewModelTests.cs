@@ -47,6 +47,31 @@ public class JiraLoginDialogViewModelTests
         // Assert
         _viewModel.IsSuccess.Should().BeTrue();
         _mockSettingsService.Verify(x => x.SaveJiraConfiguration(_configuration), Times.Once);
+        _configuration.Company.Should().Be("acme");
+    }
+
+    [Fact]
+    public async Task Should_ReportLoginSuccess_When_SettingsSaveFails()
+    {
+        // Arrange
+        _viewModel.Company = "acme";
+        _viewModel.Email = "user@example.com";
+        _viewModel.ApiToken = "token123";
+
+        _mockAuthService
+            .Setup(x => x.LoginAsync("acme", "user@example.com", "token123"))
+            .ReturnsAsync(true);
+        _mockAuthService.Setup(x => x.CurrentUsername).Returns("Test User");
+
+        _mockSettingsService
+            .Setup(x => x.SaveJiraConfiguration(It.IsAny<JiraConfiguration>()))
+            .Throws(new IOException("Disk full"));
+
+        // Act
+        await _viewModel.LoginCommand.ExecuteAsync(null);
+
+        // Assert
+        _viewModel.IsSuccess.Should().BeTrue();
     }
 
     [Fact]
